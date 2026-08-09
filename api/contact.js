@@ -1,40 +1,282 @@
-/* ═══════════════════════════════════════════════
-   /api/contact — Contact form handler
-   Vercel Serverless Function (Node.js)
-
-   Required Vercel Environment Variables:
-   SMTP_HOST     = smtp.gmail.com
-   SMTP_PORT     = 587
-   SMTP_USER     = your@gmail.com
-   SMTP_PASS     = your-gmail-app-password
-   CONTACT_TO    = your@gmail.com
-   ═══════════════════════════════════════════════ */
-
 const nodemailer = require('nodemailer');
+const { neon } = require('@neondatabase/serverless');
 
 module.exports = async function handler(req, res) {
-  /* CORS */
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, email, subject, message } = req.body || {};
-
-  /* Validate */
-  if (!name || !email || !subject || !message) {
-    return res.status(400).json({ error: 'All fields are required.' });
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({ error: 'Invalid email address.' });
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
-  /* SMTP config from env */
-  const {
-    SMTP_HOST  = 'smtp.gmail.com',
-    SMTP_PORT  = '587',
-    SMTP_USER,
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      error: 'Method not allowed'
+    });
+  }
+
+  try {
+    const {
+      name,
+      email,
+      subject,
+      message
+    } = req.body || {};
+
+    // Validation
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({
+        error: 'All fields are required.'
+      });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email address.'
+      });
+    }
+
+    /*
+     * ============================================
+     * SAVE MESSAGE TO NEON DATABASE
+     * ============================================
+     */
+
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL is missing');
+      return res.status(500).json({
+        error: 'Database is not configured.'
+      });
+    }
+
+    const sql = neon(process.env.DATABASE_URL);
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS portfolio_messages (
+        id BIGSERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `;
+
+    await sql`
+      INSERT INTO portfolio_messages
+        (name, email, subject, message)
+      VALUES
+        (${name}, ${email}, ${subject}, ${message})
+    `;
+
+    /*
+     * ============================================
+     * SMTP CONFIG
+     * ============================================
+     */
+
+    const {
+      SMTP_HOST = 'smtp.gmail.com',
+      SMTP_PORT = '587',
+      SMTP_USER,
+      SMTP_PASS,
+      CONTACT_TO
+    } = process.env;
+
+    /*
+     * If SMTP is not configured,
+     * database message is still saved.
+     */
+
+    if (!SMTP_USER || !SMTP_PASS || !CONTACT_TO) {
+      console.log(
+        'Message saved to database. SMTP not configured.'
+      );
+
+      return res.status(200).json({
+        ok: true,
+        saved: true,
+        emailSent: false
+      });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: parseInt(SMTP_PORT),
+      secure: parseInt(SMTP_PORT) === 465,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS
+      }
+    });
+
+    /*
+     * ============================================
+     * EMAIL TO OWNER
+     * ============================================
+     */
+
+    await transporter.sendMail({
+      from: `"Portfolio Contact" <${SMTP_USER}>`,
+      to: CONTACT_TO,
+      replyTo: email,
+      subject: `[Portfolio] ${subject}`,
+
+      html: `
+        <div style="
+          font-family:Arial,sans-serif;
+          max-width:600px;
+          margin:auto;
+          background:#0D1117;
+          color:#E6EDF3;
+          border-radius:12px;
+          overflow:hidden
+        ">
+
+          <div style="
+            background:#00F5A0;
+            padding:24px 32px
+          ">
+            <h2 style="
+              margin:0;
+              color:#080C10
+            ">
+              New message from your portfolio
+            </h2>
+          </div>
+
+          <div style="padding:32px">
+
+            <p>
+              <strong>Name:</strong>
+              ${escapeHtml(name)}
+            </p>
+
+            <p>
+              <strong>Email:</strong>
+              ${escapeHtml(email)}
+            </p>
+
+            <p>
+              <strong>Subject:</strong>
+              ${escapeHtml(subject)}
+            </p>
+
+            <div style="
+              margin-top:24px;
+              padding:20px;
+              background:#161B22;
+              border-radius:8px;
+              border-left:3px solid #00F5A0
+            ">
+              ${escapeHtml(message).replace(/\n/g, '<br>')}
+            </div>
+
+          </div>
+
+        </div>
+      `
+    });
+
+    /*
+     * ============================================
+     * AUTO REPLY
+     * ============================================
+     */
+
+    await transporter.sendMail({
+      from: `"Nobin" <${SMTP_USER}>`,
+      to: email,
+      subject: `Got your message, ${name}! — Nobin`,
+
+      html: `
+        <div style="
+          font-family:Arial,sans-serif;
+          max-width:600px;
+          margin:auto;
+          background:#0D1117;
+          color:#E6EDF3;
+          border-radius:12px;
+          overflow:hidden
+        ">
+
+          <div style="
+            background:#00F5A0;
+            padding:24px 32px
+          ">
+            <h2 style="
+              margin:0;
+              color:#080C10
+            ">
+              Thanks for reaching out!
+            </h2>
+          </div>
+
+          <div style="padding:32px">
+
+            <p>
+              Hey ${escapeHtml(name)}! 👋
+            </p>
+
+            <p style="color:#8B949E">
+              I've received your message and will get back
+              to you within 24 hours.
+            </p>
+
+            <div style="
+              padding:20px;
+              background:#161B22;
+              border-radius:8px;
+              margin-top:20px
+            ">
+              ${escapeHtml(message).replace(/\n/g, '<br>')}
+            </div>
+
+            <p style="color:#8B949E;margin-top:24px">
+              Talk soon,<br>
+              <strong style="color:#E6EDF3">
+                Nobin
+              </strong>
+            </p>
+
+          </div>
+
+        </div>
+      `
+    });
+
+    return res.status(200).json({
+      ok: true,
+      saved: true,
+      emailSent: true
+    });
+
+  } catch (error) {
+
+    console.error('CONTACT API ERROR:', error);
+
+    return res.status(500).json({
+      error: 'Failed to process message.'
+    });
+  }
+};
+
+
+/*
+ * Escape HTML to prevent message content
+ * from injecting HTML into email.
+ */
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}    SMTP_USER,
     SMTP_PASS,
     CONTACT_TO,
   } = process.env;
