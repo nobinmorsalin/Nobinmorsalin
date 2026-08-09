@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Nobin Portfolio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body">
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="nav-logo" style="margin-bottom:32px;font-size:1.5rem">
+      <span class="logo-bracket">[</span>admin<span class="logo-bracket">]</span>
+    </div>
+    <h2 class="login-title">Welcome back</h2>
+    <p class="login-sub">Sign in to manage your portfolio</p>
+    <div id="loginError" class="login-error hidden">❌ Invalid credentials</div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="loginUser" value="admin@nobin" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" />
+    </div>
+    <button class="btn btn-primary btn-full" id="loginBtn">Sign In →</button>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="admin-wrap hidden" id="adminWrap">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-bracket">[</span>nobin<span class="logo-bracket">]</span>
+      <span class="sidebar-role">Admin</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="sb-btn active" data-panel="overview">📊 Overview</button>
+      <button class="sb-btn" data-panel="services">🛠️ Services</button>
+      <button class="sb-btn" data-panel="projects">🖼️ Projects</button>
+      <button class="sb-btn" data-panel="skills">⚡ Skills</button>
+      <button class="sb-btn" data-panel="workflow">📋 Workflow</button>
+      <button class="sb-btn" data-panel="messages">📨 Messages</button>
+      <button class="sb-btn" data-panel="settings">⚙️ Settings</button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank" class="sb-link">↗ View Site</a>
+      <button class="sb-link" id="logoutBtn">⇠ Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="admin-main">
+
+    <!-- ── OVERVIEW ── -->
+    <div class="panel active" id="panel-overview">
+      <div class="panel-header">
+        <h1 class="panel-title">Dashboard</h1>
+        <p class="panel-sub">Welcome back, Nobin!</p>
+      </div>
+      <div class="stats-row" id="overviewStats"></div>
+      <div class="recent-messages">
+        <h3 class="section-h3">Recent Messages</h3>
+        <div id="recentMessages"></div>
+      </div>
+    </div>
+
+    <!-- ── SERVICES ── -->
+    <div class="panel hidden" id="panel-services">
+      <div class="panel-header">
+        <h1 class="panel-title">Services</h1>
+        <button class="btn btn-primary" id="addServiceBtn">+ Add Service</button>
+      </div>
+      <div class="item-grid" id="servicesAdmin"></div>
+    </div>
+
+    <!-- ── PROJECTS ── -->
+    <div class="panel hidden" id="panel-projects">
+      <div class="panel-header">
+        <h1 class="panel-title">Projects</h1>
+        <button class="btn btn-primary" id="addProjectBtn">+ Add Project</button>
+      </div>
+      <div class="item-grid" id="projectsAdmin"></div>
+    </div>
+
+    <!-- ── SKILLS ── -->
+    <div class="panel hidden" id="panel-skills">
+      <div class="panel-header">
+        <h1 class="panel-title">Skills</h1>
+        <div class="add-skill-row">
+          <input type="text" id="newSkillInput" placeholder="e.g. TypeScript" class="admin-input" />
+          <button class="btn btn-primary" id="addSkillBtn">+ Add</button>
+        </div>
+      </div>
+      <div class="skills-admin-grid" id="skillsAdmin"></div>
+    </div>
+
+    <!-- ── WORKFLOW ── -->
+    <div class="panel hidden" id="panel-workflow">
+      <div class="panel-header">
+        <h1 class="panel-title">Workflow Steps</h1>
+        <button class="btn btn-primary" id="addWorkflowBtn">+ Add Step</button>
+      </div>
+      <div class="item-list" id="workflowAdmin"></div>
+    </div>
+
+    <!-- ── MESSAGES ── -->
+    <div class="panel hidden" id="panel-messages">
+      <div class="panel-header">
+        <h1 class="panel-title">Messages</h1>
+        <button class="btn btn-ghost" id="clearMsgsBtn">Clear All</button>
+      </div>
+      <div id="messagesAdmin"></div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="panel hidden" id="panel-settings">
+      <div class="panel-header">
+        <h1 class="panel-title">Settings</h1>
+      </div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3 class="settings-h3">Profile</h3>
+          <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" id="setName" class="admin-input" />
+          </div>
+          <div class="form-group">
+            <label>Contact Email</label>
+            <input type="email" id="setEmail" class="admin-input" />
+          </div>
+          <div class="form-group">
+            <label>GitHub URL</label>
+            <input type="url" id="setGithub" class="admin-input" />
+          </div>
+          <div class="form-group">
+            <label>LinkedIn URL</label>
+            <input type="url" id="setLinkedin" class="admin-input" />
+          </div>
+          <button class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="settings-h3">About Section</h3>
+          <div class="form-group">
+            <label>Heading</label>
+            <input type="text" id="setAboutTitle" class="admin-input" />
+          </div>
+          <div class="form-group">
+            <label>Paragraph 1</label>
+            <textarea id="setAboutBio1" class="admin-input" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Paragraph 2</label>
+            <textarea id="setAboutBio2" class="admin-input" rows="3"></textarea>
+          </div>
+          <button class="btn btn-primary" id="saveAboutBtn">Save About</button>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="settings-h3">SMTP Email Setup</h3>
+          <p class="settings-info">Configure your Vercel environment variables for email:</p>
+          <div class="smtp-info">
+            <div class="smtp-var">SMTP_HOST=<span>smtp.gmail.com</span></div>
+            <div class="smtp-var">SMTP_PORT=<span>587</span></div>
+            <div class="smtp-var">SMTP_USER=<span>your@gmail.com</span></div>
+            <div class="smtp-var">SMTP_PASS=<span>your-app-password</span></div>
+            <div class="smtp-var">CONTACT_TO=<span>your@gmail.com</span></div>
+          </div>
+          <a href="https://vercel.com/docs/environment-variables" target="_blank" class="btn btn-ghost mt-sm">Vercel Env Vars Guide ↗</a>
+        </div>
+
+        <div class="settings-card danger-zone">
+          <h3 class="settings-h3" style="color:var(--red)">Danger Zone</h3>
+          <p class="settings-info">Reset all data to defaults. This cannot be undone.</p>
+          <button class="btn" style="background:rgba(255,107,107,.1);color:var(--red);border:1px solid rgba(255,107,107,.3)" id="resetAllBtn">Reset All Data</button>
+        </div>
+      </div>
+      <div id="settingsSaved" class="settings-saved hidden">✅ Settings saved!</div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">Add Item</h3>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary" id="modalSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/data.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
