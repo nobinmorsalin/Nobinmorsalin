@@ -3,11 +3,37 @@
    ═══════════════════════════════════════════════ */
 
 /* ── MESSAGES STORE ── */
-const MSGS_KEY = 'portfolio_messages';
+let adminMessages = [];
 
-function getMsgs()         { try { return JSON.parse(localStorage.getItem(MSGS_KEY)) || []; } catch { return []; } }
-function saveMsgs(msgs)    { localStorage.setItem(MSGS_KEY, JSON.stringify(msgs)); }
-function addMsg(msg)       { const msgs = getMsgs(); msgs.unshift({ ...msg, id: Date.now(), time: new Date().toISOString(), read: false }); saveMsgs(msgs); }
+function getMsgs() {
+  return adminMessages;
+}
+
+async function loadMessagesFromAPI() {
+  try {
+    const response = await fetch('/api/messages', {
+      method: 'GET',
+      cache: 'no-store'
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || 'Failed to load messages');
+    }
+
+    adminMessages = Array.isArray(data.messages)
+      ? data.messages
+      : [];
+
+    return adminMessages;
+
+  } catch (error) {
+    console.error('LOAD MESSAGES ERROR:', error);
+    adminMessages = [];
+    return [];
+  }
+}
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,18 +71,49 @@ document.getElementById('logoutBtn')?.addEventListener('click', () => {
 });
 
 /* ── PANEL NAVIGATION ── */
-function initAdmin() {
+async function initAdmin() {
+
   document.querySelectorAll('.sb-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+
+    btn.addEventListener('click', async () => {
+
+      document.querySelectorAll('.sb-btn')
+        .forEach(b => b.classList.remove('active'));
+
+      document.querySelectorAll('.panel')
+        .forEach(p => p.classList.add('hidden'));
+
       btn.classList.add('active');
-      const panel = document.getElementById('panel-' + btn.dataset.panel);
-      if (panel) panel.classList.remove('hidden');
+
+      const panel = document.getElementById(
+        'panel-' + btn.dataset.panel
+      );
+
+      if (panel) {
+        panel.classList.remove('hidden');
+      }
+
+      /*
+       * Always get the latest messages
+       * from Neon when opening Messages.
+       */
+      if (btn.dataset.panel === 'messages') {
+        await loadMessagesFromAPI();
+      }
+
       renderPanel(btn.dataset.panel);
     });
+
   });
+
+  /*
+   * Load messages immediately so
+   * Overview also shows correct counts.
+   */
+  await loadMessagesFromAPI();
+
   renderPanel('overview');
+
   initServices();
   initProjects();
   initSkills();
@@ -404,52 +461,272 @@ function openWorkflowModal(step) {
 /* ══════════════════════════════════════
    MESSAGES
 ══════════════════════════════════════ */
-function renderMessagesAdmin() {
+
+async function renderMessagesAdmin() {
+
+  const el = document.getElementById('messagesAdmin');
+
+  if (!el) return;
+
+  /*
+   * Always refresh from database
+   */
+  await loadMessagesFromAPI();
+
   const msgs = getMsgs();
-  const el   = document.getElementById('messagesAdmin');
 
   if (!msgs.length) {
-    el.innerHTML = '<div class="no-messages">📬 No messages yet</div>';
+    el.innerHTML =
+      '<div class="no-messages">📬 No messages yet</div>';
+
     return;
   }
 
-  el.innerHTML = msgs.map(m => `
-    <div class="msg-admin-card ${m.read ? '' : 'msg-unread'}" id="msg-${m.id}">
-      <div class="msg-admin-header">
-        <div>
-          <span class="msg-admin-from">${m.name}</span>
-          <a href="mailto:${m.email}" class="msg-admin-email" style="margin-left:10px">${m.email}</a>
+  el.innerHTML = msgs.map(m => {
+
+    const id = m.id;
+
+    const read = Boolean(
+      m.is_read ?? m.read
+    );
+
+    const created =
+      m.created_at ||
+      m.time ||
+      new Date().toISOString();
+
+    return `
+      <div
+        class="msg-admin-card ${read ? '' : 'msg-unread'}"
+        id="msg-${id}"
+      >
+
+        <div class="msg-admin-header">
+
+          <div>
+
+            <span class="msg-admin-from">
+              ${escapeHTML(m.name || 'Unknown')}
+            </span>
+
+            <a
+              href="mailto:${escapeHTML(m.email || '')}"
+              class="msg-admin-email"
+              style="margin-left:10px"
+            >
+              ${escapeHTML(m.email || '')}
+            </a>
+
+          </div>
+
+          <div
+            style="
+              display:flex;
+              gap:10px;
+              align-items:center;
+              flex-wrap:wrap;
+            "
+          >
+
+            <span class="msg-admin-time">
+              ${new Date(created).toLocaleString()}
+            </span>
+
+            <button
+              class="action-btn"
+              style="flex:none;padding:4px 10px"
+              onclick="markRead(${id})"
+              ${read ? 'disabled' : ''}
+            >
+              ${read ? '✓ Read' : 'Mark read'}
+            </button>
+
+            <button
+              class="action-btn delete"
+              style="flex:none;padding:4px 10px"
+              onclick="deleteMsg(${id})"
+            >
+              🗑️
+            </button>
+
+          </div>
+
         </div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <span class="msg-admin-time">${new Date(m.time).toLocaleString()}</span>
-          <button class="action-btn" style="flex:none;padding:4px 10px" onclick="markRead(${m.id})">${m.read ? '✓' : 'Mark read'}</button>
-          <button class="action-btn delete" style="flex:none;padding:4px 10px" onclick="deleteMsg(${m.id})">🗑️</button>
+
+        <div class="msg-admin-subject">
+          <strong>Subject:</strong>
+          ${escapeHTML(m.subject || 'Live Chat')}
         </div>
+
+        <div class="msg-admin-body">
+          ${escapeHTML(m.message || '')}
+        </div>
+
       </div>
-      <div class="msg-admin-subject"><strong>Subject:</strong> ${m.subject}</div>
-      <div class="msg-admin-body">${m.message}</div>
-    </div>
-  `).join('');
+    `;
+
+  }).join('');
 }
 
-function markRead(id) {
-  const msgs = getMsgs().map(m => m.id === id ? { ...m, read: true } : m);
-  saveMsgs(msgs);
-  renderMessagesAdmin();
+
+/* ─────────────────────────────
+   MARK READ
+───────────────────────────── */
+
+async function markRead(id) {
+
+  try {
+
+    const response = await fetch('/api/messages', {
+
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      body: JSON.stringify({
+        action: 'read',
+        id
+      })
+
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.error || 'Failed to mark message as read'
+      );
+    }
+
+    await renderMessagesAdmin();
+
+    renderOverview();
+
+  } catch (error) {
+
+    console.error('MARK READ ERROR:', error);
+
+    alert('Could not mark message as read.');
+
+  }
 }
 
-function deleteMsg(id) {
-  if (!confirm('Delete this message?')) return;
-  saveMsgs(getMsgs().filter(m => m.id !== id));
-  renderMessagesAdmin();
+
+/* ─────────────────────────────
+   DELETE MESSAGE
+───────────────────────────── */
+
+async function deleteMsg(id) {
+
+  if (!confirm('Delete this message?')) {
+    return;
+  }
+
+  try {
+
+    const response = await fetch('/api/messages', {
+
+      method: 'DELETE',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      body: JSON.stringify({
+        id
+      })
+
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.error || 'Failed to delete message'
+      );
+    }
+
+    await renderMessagesAdmin();
+
+    renderOverview();
+
+  } catch (error) {
+
+    console.error('DELETE MESSAGE ERROR:', error);
+
+    alert('Could not delete message.');
+
+  }
 }
 
-document.getElementById('clearMsgsBtn')?.addEventListener('click', () => {
-  if (!confirm('Delete ALL messages?')) return;
-  saveMsgs([]);
-  renderMessagesAdmin();
-});
 
+/* ─────────────────────────────
+   CLEAR ALL
+───────────────────────────── */
+
+document
+  .getElementById('clearMsgsBtn')
+  ?.addEventListener('click', async () => {
+
+    if (!confirm('Delete ALL messages?')) {
+      return;
+    }
+
+    try {
+
+      const response = await fetch('/api/messages', {
+
+        method: 'DELETE',
+
+        headers: {
+          'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({
+          all: true
+        })
+
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.error || 'Failed to clear messages'
+        );
+      }
+
+      await renderMessagesAdmin();
+
+      renderOverview();
+
+    } catch (error) {
+
+      console.error('CLEAR MESSAGES ERROR:', error);
+
+      alert('Could not clear messages.');
+
+    }
+
+  });
+
+
+/* ─────────────────────────────
+   HTML ESCAPE
+───────────────────────────── */
+
+function escapeHTML(value) {
+
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+}
 /* ══════════════════════════════════════
    SETTINGS
 ══════════════════════════════════════ */
@@ -530,4 +807,3 @@ document.getElementById('modalOverlay')?.addEventListener('click', e => {
 });
 
 /* Export addMsg for API use */
-window.addMsg = addMsg;
