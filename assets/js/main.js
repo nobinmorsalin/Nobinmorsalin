@@ -1,247 +1,1398 @@
-/* ═══════════════════════════════════════════════
-   MAIN.JS — Portfolio rendering & interactions
-   ═══════════════════════════════════════════════ */
+/* =========================================================
+   NOBIN MORSALIN — MAIN FRONTEND
+   ========================================================= */
 
-document.addEventListener('DOMContentLoaded', () => {
+(function () {
+  'use strict';
 
-  /* ── NAV SCROLL ── */
-  const nav = document.getElementById('nav');
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 60);
-  });
+  const $ = (selector, parent = document) =>
+    parent.querySelector(selector);
 
-  /* ── MOBILE NAV ── */
-  const navToggle = document.getElementById('navToggle');
-  const navLinks  = document.querySelector('.nav-links');
-  navToggle?.addEventListener('click', () => {
-    navLinks.classList.toggle('open');
-  });
-  navLinks?.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => navLinks.classList.remove('open'));
-  });
+  const $$ = (selector, parent = document) =>
+    Array.from(parent.querySelectorAll(selector));
 
-  /* ── SCROLL REVEAL ── */
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.1 });
 
-  document.querySelectorAll('.section-title, .service-card, .project-card, .workflow-step, .about-grid > *').forEach(el => {
-    el.classList.add('reveal');
-    observer.observe(el);
-  });
+  /* =======================================================
+     HELPERS
+  ======================================================= */
 
-  /* ── RENDER EVERYTHING ── */
-  renderAbout();
-  renderSkills();
-  renderServices();
-  renderProjects();
-  renderWorkflow();
-  updateStats();
-  loadSettings();
+  function escapeHTML(value) {
+    if (value === null || value === undefined) return '';
 
-  /* ── CONTACT FORM ── */
-  const form       = document.getElementById('contactForm');
-  const submitBtn  = document.getElementById('submitBtn');
-  const formStatus = document.getElementById('formStatus');
-  const btnText    = submitBtn?.querySelector('.btn-text');
-  const btnLoading = submitBtn?.querySelector('.btn-loading');
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(form));
 
-    btnText.classList.add('hidden');
-    btnLoading.classList.remove('hidden');
-    submitBtn.disabled = true;
-    formStatus.className = 'form-status';
-    formStatus.textContent = '';
+  function safeUrl(url) {
+    if (!url) return '#';
 
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const json = await res.json();
+    const value = String(url).trim();
 
-      if (res.ok) {
-        formStatus.className = 'form-status success';
-        formStatus.textContent = '✅ Message sent! I\'ll reply within 24 hours.';
-        form.reset();
-      } else {
-        throw new Error(json.error || 'Failed to send');
-      }
-    } catch (err) {
-      formStatus.className = 'form-status error';
-      formStatus.textContent = '❌ ' + (err.message || 'Something went wrong. Please try again.');
-    } finally {
-      btnText.classList.remove('hidden');
-      btnLoading.classList.add('hidden');
-      submitBtn.disabled = false;
+    if (
+      value.startsWith('https://') ||
+      value.startsWith('http://') ||
+      value.startsWith('/') ||
+      value.startsWith('#') ||
+      value.startsWith('mailto:')
+    ) {
+      return value;
     }
-  });
-});
 
-/* ════════════════════════════════
-   RENDER FUNCTIONS
-════════════════════════════════ */
-
-function renderAbout() {
-  const about = PortfolioData.get('about');
-  const el = document.getElementById('aboutTitle');
-  const tx = document.getElementById('aboutText');
-  if (el) el.textContent = about.title;
-  if (tx) tx.innerHTML = `<p>${about.bio1}</p><p>${about.bio2}</p>`;
-}
-
-function renderSkills() {
-  const skills = PortfolioData.get('skills');
-  const grid   = document.getElementById('skillsGrid');
-  if (!grid) return;
-  grid.innerHTML = skills.map(s =>
-    `<span class="skill-tag">${s}</span>`
-  ).join('');
-}
-
-function renderServices() {
-  const services = PortfolioData.get('services');
-  const grid     = document.getElementById('servicesGrid');
-  if (!grid) return;
-
-  if (!services.length) {
-    grid.innerHTML = emptyState('No services added yet');
-    return;
+    return '#';
   }
 
-  grid.innerHTML = services.map((s, i) => `
-    <div class="service-card reveal reveal-delay-${(i % 4) + 1}">
-      <span class="service-icon">${s.icon}</span>
-      <div class="service-name">${s.name}</div>
-      <div class="service-desc">${s.desc}</div>
-    </div>
-  `).join('');
 
-  observeNewElements();
-}
-
-function renderProjects() {
-  const projects  = PortfolioData.get('projects');
-  const grid      = document.getElementById('projectsGrid');
-  const filterBar = document.getElementById('filterBar');
-  if (!grid) return;
-
-  if (!projects.length) {
-    grid.innerHTML = emptyState('No projects added yet');
-    return;
-  }
-
-  /* Build filter buttons */
-  const cats = ['All', ...new Set(projects.map(p => p.category).filter(Boolean))];
-  filterBar.innerHTML = cats.map(c =>
-    `<button class="filter-btn ${c === 'All' ? 'active' : ''}" data-filter="${c}">${c}</button>`
-  ).join('');
-
-  filterBar.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const f = btn.dataset.filter;
-      grid.querySelectorAll('.project-card').forEach(card => {
-        card.style.display = (f === 'All' || card.dataset.cat === f) ? '' : 'none';
-      });
-    });
-  });
-
-  grid.innerHTML = projects.map((p, i) => `
-    <div class="project-card reveal reveal-delay-${(i % 3) + 1}" data-cat="${p.category || ''}">
-      <div class="project-img-wrap">
-        ${p.image
-          ? `<img class="project-img" src="${p.image}" alt="${p.title}" onerror="this.parentElement.innerHTML='<div class=\\'project-img-placeholder\\'>🖥️</div>'" />`
-          : `<div class="project-img-placeholder">🖥️</div>`
-        }
-      </div>
-      <div class="project-content">
-        <div class="project-tags">${(p.tags || []).map(t => `<span class="project-tag">${t}</span>`).join('')}</div>
-        <div class="project-title">${p.title}</div>
-        <div class="project-desc">${p.desc}</div>
-        <div class="project-links">
-          ${p.live   ? `<a href="${p.live}"   target="_blank" class="project-link">↗ Live Demo</a>` : ''}
-          ${p.github ? `<a href="${p.github}" target="_blank" class="project-link">⌥ GitHub</a>`   : ''}
-        </div>
-      </div>
-    </div>
-  `).join('');
-
-  observeNewElements();
-}
-
-function renderWorkflow() {
-  const steps = PortfolioData.get('workflow');
-  const wrap  = document.getElementById('workflowSteps');
-  if (!wrap) return;
-
-  wrap.innerHTML = steps.map((s, i) => `
-    <div class="workflow-step reveal reveal-delay-${(i % 4) + 1}">
-      <div class="step-num">STEP ${String(i + 1).padStart(2, '0')}</div>
-      <div class="step-icon">${s.icon}</div>
-      <div class="step-title">${s.title}</div>
-      <div class="step-desc">${s.desc}</div>
-    </div>
-  `).join('');
-
-  observeNewElements();
-}
-
-function updateStats() {
-  const projects = PortfolioData.get('projects');
-  const services = PortfolioData.get('services');
-
-  animateCount('stat-projects', projects.length);
-  animateCount('stat-services', services.length);
-}
-
-function loadSettings() {
-  const s = PortfolioData.get('settings');
-  const emailEl = document.getElementById('contactEmail');
-  if (emailEl && s.email) emailEl.textContent = s.email;
-}
-
-/* ── HELPERS ── */
-function emptyState(msg) {
-  return `<div class="empty-state">
-    <div class="empty-state-icon">📂</div>
-    <p>${msg}</p>
-  </div>`;
-}
-
-function animateCount(elId, target) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  const numEl = el.querySelector('.stat-num');
-  if (!numEl) return;
-  let current = 0;
-  const step = Math.ceil(target / 30);
-  const timer = setInterval(() => {
-    current = Math.min(current + step, target);
-    numEl.textContent = current + '+';
-    if (current >= target) clearInterval(timer);
-  }, 50);
-}
-
-function observeNewElements() {
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        observer.unobserve(e.target);
+  function getData(key) {
+    try {
+      if (
+        window.PortfolioData &&
+        typeof window.PortfolioData.get === 'function'
+      ) {
+        return window.PortfolioData.get(key);
       }
-    });
-  }, { threshold: 0.1 });
+    } catch (error) {
+      console.warn(`Could not load ${key}:`, error);
+    }
 
-  document.querySelectorAll('.reveal:not(.visible)').forEach(el => observer.observe(el));
-}
+    return [];
+  }
+
+
+  function getSettings() {
+    const settings = getData('settings');
+
+    return settings && typeof settings === 'object'
+      ? settings
+      : {};
+  }
+
+
+  /* =======================================================
+     SITE SETTINGS
+  ======================================================= */
+
+  function renderSettings() {
+    const settings = getSettings();
+
+    const name =
+      settings.name ||
+      'Nobin Morsalin';
+
+    const email =
+      settings.email ||
+      'admin@nobin.dev';
+
+
+    /* Header */
+
+    $$('.logo-name').forEach((element) => {
+      element.textContent = name.split(' ')[0] || 'Nobin';
+    });
+
+    $$('.logo-lastname').forEach((element) => {
+      const parts = name.trim().split(/\s+/);
+
+      element.textContent =
+        parts.length > 1
+          ? ` ${parts.slice(1).join(' ')}`
+          : '';
+    });
+
+
+    /* About fallback */
+
+    const aboutTitle = $('#aboutTitle');
+
+    if (
+      aboutTitle &&
+      settings.name
+    ) {
+      aboutTitle.textContent =
+        `Hello, I'm ${settings.name.split(' ')[0]}`;
+    }
+
+
+    /* Contact email */
+
+    const contactEmail = $('#contactEmail');
+
+    if (contactEmail) {
+      contactEmail.textContent = email;
+    }
+
+
+    /* Page title */
+
+    document.title =
+      `${name} — Full-Stack Developer`;
+  }
+
+
+  /* =======================================================
+     ABOUT
+  ======================================================= */
+
+  function renderAbout() {
+    const about = getData('about');
+
+    if (!about || typeof about !== 'object') {
+      return;
+    }
+
+
+    const title = $('#aboutTitle');
+
+    if (title && about.title) {
+      title.textContent = about.title;
+    }
+
+
+    const textContainer = $('#aboutText');
+
+    if (textContainer) {
+
+      const paragraphs = [];
+
+      if (about.bio1) {
+        paragraphs.push(
+          `<p>${escapeHTML(about.bio1)}</p>`
+        );
+      }
+
+      if (about.bio2) {
+        paragraphs.push(
+          `<p>${escapeHTML(about.bio2)}</p>`
+        );
+      }
+
+      if (paragraphs.length) {
+        textContainer.innerHTML =
+          paragraphs.join('');
+      }
+    }
+  }
+
+
+  /* =======================================================
+     PROFILE IMAGE
+  ======================================================= */
+
+  function renderProfileImage() {
+    const image = $('#profileImg');
+
+    if (!image) return;
+
+    const settings = getSettings();
+
+    const imageUrl =
+      settings.profileImage ||
+      settings.profile_image ||
+      settings.avatar ||
+      settings.photo;
+
+    if (imageUrl) {
+      image.src = imageUrl;
+    }
+  }
+
+
+  /* =======================================================
+     SKILLS
+  ======================================================= */
+
+  function renderSkills() {
+    const container = $('#skillsGrid');
+
+    if (!container) return;
+
+    const skills = getData('skills');
+
+    if (!Array.isArray(skills)) {
+      container.innerHTML = '';
+      return;
+    }
+
+
+    container.innerHTML = skills
+      .filter(Boolean)
+      .map((skill) => {
+
+        const value =
+          typeof skill === 'object'
+            ? skill.name || skill.title || ''
+            : skill;
+
+        if (!value) return '';
+
+        return `
+          <div class="skill-tag">
+            ${escapeHTML(value)}
+          </div>
+        `;
+
+      })
+      .join('');
+  }
+
+
+  /* =======================================================
+     SERVICES
+  ======================================================= */
+
+  function serviceCard(service) {
+
+    const icon =
+      service.icon ||
+      service.emoji ||
+      '⚡';
+
+    const name =
+      service.name ||
+      service.title ||
+      'Service';
+
+    const description =
+      service.desc ||
+      service.description ||
+      'Professional digital solution.';
+
+
+    return `
+      <article class="service-card">
+
+        <div class="service-icon">
+          ${escapeHTML(icon)}
+        </div>
+
+        <h3 class="service-title">
+          ${escapeHTML(name)}
+        </h3>
+
+        <p class="service-desc">
+          ${escapeHTML(description)}
+        </p>
+
+      </article>
+    `;
+  }
+
+
+  function renderServices() {
+    const container = $('#servicesGrid');
+
+    if (!container) return;
+
+    const services = getData('services');
+
+    if (!Array.isArray(services)) {
+      container.innerHTML = '';
+      return;
+    }
+
+
+    const visibleServices =
+      services.filter((service) => {
+
+        if (!service) return false;
+
+        if (
+          service.visible === false ||
+          service.active === false
+        ) {
+          return false;
+        }
+
+        return true;
+      });
+
+
+    if (!visibleServices.length) {
+      container.innerHTML = `
+        <div class="service-card">
+          <div class="service-icon">⚡</div>
+          <h3 class="service-title">
+            Services coming soon
+          </h3>
+          <p class="service-desc">
+            New services will be added soon.
+          </p>
+        </div>
+      `;
+
+      return;
+    }
+
+
+    /*
+      Duplicate the cards.
+
+      This is required for a seamless marquee.
+    */
+
+    const firstSet =
+      visibleServices
+        .map(serviceCard)
+        .join('');
+
+    const secondSet =
+      visibleServices
+        .map(serviceCard)
+        .join('');
+
+
+    container.innerHTML =
+      firstSet +
+      secondSet;
+
+
+    container.dataset.marqueeReady = 'true';
+  }
+
+
+  /* =======================================================
+     CLIENTS
+  ======================================================= */
+
+  function clientCard(client) {
+
+    const name =
+      client.name ||
+      client.title ||
+      'Client';
+
+    const service =
+      client.service ||
+      client.services ||
+      client.description ||
+      'Digital Solution';
+
+
+    const logo =
+      client.logo ||
+      client.image ||
+      client.imageUrl ||
+      '';
+
+
+    let visual = '';
+
+
+    if (logo) {
+
+      visual = `
+        <img
+          src="${escapeHTML(safeUrl(logo))}"
+          alt="${escapeHTML(name)} logo"
+          class="client-logo"
+          loading="lazy"
+          onerror="
+            this.style.display='none';
+            this.nextElementSibling.style.display='grid';
+          "
+        />
+
+        <span
+          class="client-logo-fallback"
+          style="display:none"
+          aria-hidden="true"
+        >
+          ${escapeHTML(
+            name.charAt(0).toUpperCase()
+          )}
+        </span>
+      `;
+
+    } else {
+
+      visual = `
+        <span
+          class="client-logo-fallback"
+          aria-hidden="true"
+        >
+          ${escapeHTML(
+            name.charAt(0).toUpperCase()
+          )}
+        </span>
+      `;
+    }
+
+
+    const website =
+      safeUrl(
+        client.website ||
+        client.url ||
+        client.link
+      );
+
+
+    const content = `
+      <div class="client-visual">
+        ${visual}
+      </div>
+
+      <div class="client-info">
+
+        <div class="client-name">
+          ${escapeHTML(name)}
+        </div>
+
+        <div class="client-service">
+          ${escapeHTML(service)}
+        </div>
+
+      </div>
+    `;
+
+
+    if (website !== '#') {
+
+      return `
+        <a
+          href="${escapeHTML(website)}"
+          class="client-card"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ${content}
+        </a>
+      `;
+
+    }
+
+
+    return `
+      <article class="client-card">
+        ${content}
+      </article>
+    `;
+  }
+
+
+  function renderClients() {
+    const container = $('#clientsGrid');
+
+    if (!container) return;
+
+    const clients = getData('clients');
+
+    if (!Array.isArray(clients)) {
+      container.innerHTML = '';
+      return;
+    }
+
+
+    const visibleClients =
+      clients.filter((client) => {
+
+        if (!client) return false;
+
+        return (
+          client.visible !== false &&
+          client.active !== false
+        );
+      });
+
+
+    if (!visibleClients.length) {
+
+      container.innerHTML = `
+        <article class="client-card">
+
+          <span class="client-logo-fallback">
+            +
+          </span>
+
+          <div class="client-info">
+
+            <div class="client-name">
+              Your Brand
+            </div>
+
+            <div class="client-service">
+              Become a client
+            </div>
+
+          </div>
+
+        </article>
+      `;
+
+      return;
+    }
+
+
+    /*
+      First copy + second copy.
+
+      CSS moves this track from
+      LEFT → RIGHT.
+    */
+
+    const firstSet =
+      visibleClients
+        .map(clientCard)
+        .join('');
+
+    const secondSet =
+      visibleClients
+        .map(clientCard)
+        .join('');
+
+
+    /*
+      Important:
+      We put the duplicate BEFORE the original.
+
+      This makes the left-to-right animation
+      seamless.
+    */
+
+    container.innerHTML =
+      secondSet +
+      firstSet;
+
+    container.dataset.marqueeReady = 'true';
+  }
+
+
+  /* =======================================================
+     PROJECTS
+  ======================================================= */
+
+  function projectCard(project) {
+
+    const title =
+      project.title ||
+      project.name ||
+      'Project';
+
+    const description =
+      project.desc ||
+      project.description ||
+      '';
+
+    const image =
+      project.image ||
+      project.thumbnail ||
+      '';
+
+
+    const tags =
+      Array.isArray(project.tags)
+        ? project.tags
+        : [];
+
+
+    const imageHTML =
+      image
+        ? `
+          <div class="project-image">
+
+            <img
+              src="${escapeHTML(
+                safeUrl(image)
+              )}"
+              alt="${escapeHTML(title)}"
+              loading="lazy"
+            />
+
+          </div>
+        `
+        : `
+          <div class="project-image project-image-placeholder">
+            <span>⌘</span>
+          </div>
+        `;
+
+
+    const tagsHTML =
+      tags
+        .map(
+          tag => `
+            <span class="project-tag">
+              ${escapeHTML(tag)}
+            </span>
+          `
+        )
+        .join('');
+
+
+    const live =
+      safeUrl(
+        project.live ||
+        project.url ||
+        project.demo
+      );
+
+
+    const github =
+      safeUrl(project.github);
+
+
+    return `
+      <article
+        class="project-card"
+        data-category="${escapeHTML(
+          project.category || 'all'
+        )}"
+      >
+
+        ${imageHTML}
+
+        <div class="project-content">
+
+          <div class="project-tags">
+            ${tagsHTML}
+          </div>
+
+          <h3 class="project-title">
+            ${escapeHTML(title)}
+          </h3>
+
+          <p class="project-desc">
+            ${escapeHTML(description)}
+          </p>
+
+          <div class="project-links">
+
+            ${
+              live !== '#'
+                ? `
+                  <a
+                    href="${escapeHTML(live)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Live ↗
+                  </a>
+                `
+                : ''
+            }
+
+            ${
+              github !== '#'
+                ? `
+                  <a
+                    href="${escapeHTML(github)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Code ↗
+                  </a>
+                `
+                : ''
+            }
+
+          </div>
+
+        </div>
+
+      </article>
+    `;
+  }
+
+
+  function renderProjects() {
+    const container = $('#projectsGrid');
+
+    if (!container) return;
+
+    const projects = getData('projects');
+
+    if (!Array.isArray(projects)) {
+      container.innerHTML = '';
+      return;
+    }
+
+
+    container.innerHTML =
+      projects
+        .filter(Boolean)
+        .map(projectCard)
+        .join('');
+
+
+    setupProjectFilters(projects);
+  }
+
+
+  /* =======================================================
+     PROJECT FILTERS
+  ======================================================= */
+
+  function setupProjectFilters(projects) {
+
+    const filterBar = $('#filterBar');
+
+    if (!filterBar) return;
+
+
+    const categories = [
+      'all',
+      ...new Set(
+        projects
+          .map(project => project.category)
+          .filter(Boolean)
+      )
+    ];
+
+
+    filterBar.innerHTML =
+      categories
+        .map(category => {
+
+          const label =
+            category === 'all'
+              ? 'All'
+              : category;
+
+          return `
+            <button
+              class="filter-btn ${
+                category === 'all'
+                  ? 'active'
+                  : ''
+              }"
+              data-filter="${escapeHTML(category)}"
+              type="button"
+            >
+              ${escapeHTML(label)}
+            </button>
+          `;
+        })
+        .join('');
+
+
+    $$('.filter-btn', filterBar)
+      .forEach(button => {
+
+        button.addEventListener(
+          'click',
+          () => {
+
+            $$('.filter-btn', filterBar)
+              .forEach(btn =>
+                btn.classList.remove('active')
+              );
+
+            button.classList.add('active');
+
+
+            const filter =
+              button.dataset.filter;
+
+
+            $$('.project-card')
+              .forEach(card => {
+
+                const category =
+                  card.dataset.category ||
+                  'all';
+
+
+                if (
+                  filter === 'all' ||
+                  category === filter
+                ) {
+
+                  card.style.display = '';
+
+                } else {
+
+                  card.style.display = 'none';
+
+                }
+
+              });
+
+          }
+        );
+
+      });
+  }
+
+
+  /* =======================================================
+     WORKFLOW
+  ======================================================= */
+
+  function renderWorkflow() {
+
+    const container =
+      $('#workflowSteps');
+
+    if (!container) return;
+
+
+    const workflow =
+      getData('workflow');
+
+
+    if (!Array.isArray(workflow)) {
+      container.innerHTML = '';
+      return;
+    }
+
+
+    container.innerHTML =
+      workflow
+        .filter(Boolean)
+        .map((step, index) => {
+
+          return `
+            <div class="workflow-step">
+
+              <div class="workflow-number">
+                ${String(index + 1).padStart(2, '0')}
+              </div>
+
+              <div class="workflow-icon">
+                ${escapeHTML(
+                  step.icon || '⚡'
+                )}
+              </div>
+
+              <h3>
+                ${escapeHTML(
+                  step.title ||
+                  step.name ||
+                  'Step'
+                )}
+              </h3>
+
+              <p>
+                ${escapeHTML(
+                  step.desc ||
+                  step.description ||
+                  ''
+                )}
+              </p>
+
+            </div>
+          `;
+
+        })
+        .join('');
+  }
+
+
+  /* =======================================================
+     STATS
+  ======================================================= */
+
+  function renderStats() {
+
+    const projects =
+      getData('projects');
+
+    const services =
+      getData('services');
+
+    const clients =
+      getData('clients');
+
+
+    const projectNumber =
+      $('#stat-projects .stat-num');
+
+    const serviceNumber =
+      $('#stat-services .stat-num');
+
+    const clientNumber =
+      $('#stat-clients .stat-num');
+
+
+    if (projectNumber) {
+
+      projectNumber.textContent =
+        Array.isArray(projects)
+          ? projects.length + '+'
+          : '0';
+
+    }
+
+
+    if (serviceNumber) {
+
+      serviceNumber.textContent =
+        Array.isArray(services)
+          ? services.length + '+'
+          : '0';
+
+    }
+
+
+    if (clientNumber) {
+
+      clientNumber.textContent =
+        Array.isArray(clients)
+          ? clients.length + '+'
+          : '0';
+
+    }
+  }
+
+
+  /* =======================================================
+     NAVIGATION
+  ======================================================= */
+
+  function setupNavigation() {
+
+    const toggle =
+      $('#navToggle');
+
+    const links =
+      $('#navLinks');
+
+
+    if (!toggle || !links) {
+      return;
+    }
+
+
+    toggle.addEventListener(
+      'click',
+      () => {
+
+        const open =
+          links.classList.toggle('active');
+
+        toggle.classList.toggle(
+          'active',
+          open
+        );
+
+        toggle.setAttribute(
+          'aria-expanded',
+          String(open)
+        );
+
+      }
+    );
+
+
+    $$('.nav-links a', links)
+      .forEach(link => {
+
+        link.addEventListener(
+          'click',
+          () => {
+
+            links.classList.remove('active');
+
+            toggle.classList.remove(
+              'active'
+            );
+
+            toggle.setAttribute(
+              'aria-expanded',
+              'false'
+            );
+
+          }
+        );
+
+      });
+
+
+    /*
+      Navbar scroll state
+    */
+
+    const nav =
+      $('#nav');
+
+
+    if (nav) {
+
+      const updateNav =
+        () => {
+
+          nav.classList.toggle(
+            'scrolled',
+            window.scrollY > 30
+          );
+
+        };
+
+
+      window.addEventListener(
+        'scroll',
+        updateNav,
+        { passive: true }
+      );
+
+
+      updateNav();
+
+    }
+
+  }
+
+
+  /* =======================================================
+     CONTACT FORM
+  ======================================================= */
+
+  function setupContactForm() {
+
+    const form =
+      $('#contactForm');
+
+    if (!form) return;
+
+
+    form.addEventListener(
+      'submit',
+      async (event) => {
+
+        event.preventDefault();
+
+
+        const button =
+          $('#submitBtn', form);
+
+        const buttonText =
+          $('.btn-text', form);
+
+        const loading =
+          $('.btn-loading', form);
+
+        const status =
+          $('#formStatus');
+
+
+        if (button) {
+          button.disabled = true;
+        }
+
+        if (buttonText) {
+          buttonText.classList.add(
+            'hidden'
+          );
+        }
+
+        if (loading) {
+          loading.classList.remove(
+            'hidden'
+          );
+        }
+
+
+        if (status) {
+          status.textContent =
+            'Sending message...';
+
+          status.className =
+            'form-status';
+        }
+
+
+        const formData =
+          new FormData(form);
+
+
+        const payload = {
+
+          name:
+            String(
+              formData.get('name') || ''
+            ).trim(),
+
+          email:
+            String(
+              formData.get('email') || ''
+            ).trim(),
+
+          subject:
+            String(
+              formData.get('subject') || ''
+            ).trim(),
+
+          message:
+            String(
+              formData.get('message') || ''
+            ).trim(),
+
+        };
+
+
+        try {
+
+          const response =
+            await fetch(
+              '/api/contact',
+              {
+                method: 'POST',
+
+                headers: {
+                  'Content-Type':
+                    'application/json'
+                },
+
+                body:
+                  JSON.stringify(payload)
+              }
+            );
+
+
+          const result =
+            await response.json()
+              .catch(() => ({}));
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              result.message ||
+              'Unable to send message.'
+            );
+
+          }
+
+
+          if (status) {
+
+            status.textContent =
+              result.message ||
+              'Message sent successfully!';
+
+            status.className =
+              'form-status success';
+
+          }
+
+
+          form.reset();
+
+
+        } catch (error) {
+
+          console.error(
+            'Contact form error:',
+            error
+          );
+
+
+          if (status) {
+
+            status.textContent =
+              error.message ||
+              'Something went wrong. Please try again.';
+
+            status.className =
+              'form-status error';
+
+          }
+
+        } finally {
+
+          if (button) {
+            button.disabled = false;
+          }
+
+          if (buttonText) {
+            buttonText.classList.remove(
+              'hidden'
+            );
+          }
+
+          if (loading) {
+            loading.classList.add(
+              'hidden'
+            );
+          }
+
+        }
+
+      }
+    );
+  }
+
+
+  /* =======================================================
+     SMOOTH SCROLL
+  ======================================================= */
+
+  function setupSmoothScroll() {
+
+    $$('a[href^="#"]')
+      .forEach(link => {
+
+        link.addEventListener(
+          'click',
+          event => {
+
+            const targetID =
+              link.getAttribute('href');
+
+
+            if (
+              !targetID ||
+              targetID === '#'
+            ) {
+              return;
+            }
+
+
+            const target =
+              document.querySelector(
+                targetID
+              );
+
+
+            if (!target) {
+              return;
+            }
+
+
+            event.preventDefault();
+
+
+            const nav =
+              $('#nav');
+
+
+            const navHeight =
+              nav
+                ? nav.offsetHeight
+                : 0;
+
+
+            const top =
+              target.getBoundingClientRect()
+                .top +
+              window.scrollY -
+              navHeight;
+
+
+            window.scrollTo({
+
+              top,
+
+              behavior:
+                'smooth'
+
+            });
+
+          }
+        );
+
+      });
+
+  }
+
+
+  /* =======================================================
+     IMAGE LAZY LOADING SAFETY
+  ======================================================= */
+
+  function setupImageFallbacks() {
+
+    $$('img')
+      .forEach(image => {
+
+        image.addEventListener(
+          'error',
+          () => {
+
+            image.classList.add(
+              'image-error'
+            );
+
+          },
+          { once: true }
+        );
+
+      });
+
+  }
+
+
+  /* =======================================================
+     REFRESH DATA
+     Useful after Admin changes.
+  ======================================================= */
+
+  window.refreshPortfolio =
+    function () {
+
+      renderSettings();
+      renderAbout();
+      renderProfileImage();
+      renderSkills();
+
+      renderServices();
+      renderClients();
+
+      renderProjects();
+      renderWorkflow();
+
+      renderStats();
+
+    };
+
+
+  /* =======================================================
+     INITIALIZE
+  ======================================================= */
+
+  function init() {
+
+    renderSettings();
+
+    renderAbout();
+
+    renderProfileImage();
+
+    renderSkills();
+
+    renderServices();
+
+    renderClients();
+
+    renderProjects();
+
+    renderWorkflow();
+
+    renderStats();
+
+
+    setupNavigation();
+
+    setupContactForm();
+
+    setupSmoothScroll();
+
+    setupImageFallbacks();
+
+  }
+
+
+  /* =======================================================
+     START AFTER DOM READY
+  ======================================================= */
+
+  if (
+    document.readyState ===
+    'loading'
+  ) {
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      init
+    );
+
+  } else {
+
+    init();
+
+  }
+
+})();
