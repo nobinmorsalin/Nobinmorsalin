@@ -1088,39 +1088,53 @@
      AUTO REFRESH
   ═══════════════════════════════ */
 
-  setInterval(
-    async () => {
+setInterval(
+  async () => {
 
-      if (
-        document.hidden
-      ) {
-        return;
-      }
+    if (document.hidden) {
+      return;
+    }
 
-      await loadMessages(
-        false
+    /*
+     * Always update the database cache.
+     */
+    await loadMessages(false);
+
+    renderOverviewLive();
+
+    const panel =
+      document.getElementById(
+        'panel-messages'
       );
 
-      renderOverviewLive();
+    if (
+      panel &&
+      !panel.classList.contains('hidden')
+    ) {
 
+      /*
+       * IMPORTANT:
+       * Do NOT rebuild the Messages UI while
+       * the Admin is typing a reply.
+       *
+       * Otherwise the textarea gets recreated
+       * every 3 seconds and loses focus.
+       */
+      const activeElement =
+        document.activeElement;
 
-      const panel =
-        document.getElementById(
-          'panel-messages'
-        );
+      const isTypingReply =
+        activeElement &&
+        activeElement.tagName === 'TEXTAREA' &&
+        activeElement.id.startsWith('reply-');
 
-      if (
-        panel &&
-        !panel.classList.contains(
-          'hidden'
-        )
-      ) {
-
+      if (!isTypingReply) {
         renderMessagesLive();
       }
+    }
 
-    },
-    3000
-  );
+  },
+  3000
+);
 
 })();
