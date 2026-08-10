@@ -3,277 +3,865 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nobin Morsalin — Web Developer & Digital Craftsman</title>
-  <meta name="description" content="Full-stack web developer specializing in UI/UX, API integration, webhooks, and server-to-server connections." />
+
+  <title>Nobin Morsalin — Full-Stack Developer</title>
+
+  <meta
+    name="description"
+    content="Nobin Morsalin is a full-stack developer specializing in web development, UI/UX, API integration, webhooks, automation, and complete digital systems."
+  />
+
+  <meta name="theme-color" content="#0d0d0d" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/animations.css" />
+
+  <!-- Portfolio enhancements will be added in CSS step -->
+  <link rel="stylesheet" href="assets/css/portfolio-enhancements.css" />
 </head>
+
 <body>
 
-<!-- ═══════════════════ NAV ═══════════════════ -->
-<nav class="nav" id="nav">
-  <div class="nav-inner">
-    <a href="#" class="nav-logo">
-      <span class="logo-bracket">[</span>nobin<span class="logo-bracket">]</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#services">Services</a></li>
-      <li><a href="#projects">Projects</a></li>
-      <li><a href="#workflow">Workflow</a></li>
-      <li><a href="#contact" class="nav-cta">Let's Talk</a></li>
-    </ul>
-    <button class="nav-toggle" id="navToggle" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
+  <!-- ═══════════════════════════════════════════════
+       NAVIGATION
+  ═══════════════════════════════════════════════ -->
 
-<!-- ═══════════════════ HERO ═══════════════════ -->
-<section class="hero" id="hero">
-  <div class="hero-bg">
-    <div class="grid-overlay"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-  </div>
-  <div class="container">
-    <div class="hero-content">
-      <div class="hero-eyebrow">
-        <span class="dot pulse"></span>
-        Available for projects
-      </div>
-      <h1 class="hero-title">
-        I Build Digital<br />
-        <span class="title-accent">Experiences</span><br />
-        That Work.
-      </h1>
-      <p class="hero-sub">
-        Web development · UI/UX Design · API Integration<br />
-        Webhooks · Server Architecture · End-to-End Systems
-      </p>
-      <div class="hero-actions">
-        <a href="#projects" class="btn btn-primary">View My Work</a>
-        <a href="#contact" class="btn btn-ghost">Start a Project →</a>
-      </div>
-      <div class="hero-stats">
-        <div class="stat" id="stat-projects">
-          <span class="stat-num">0</span>
-          <span class="stat-label">Projects</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat" id="stat-services">
-          <span class="stat-num">0</span>
-          <span class="stat-label">Services</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-num">100%</span>
-          <span class="stat-label">Client Satisfaction</span>
-        </div>
-      </div>
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+
+      <a href="#hero" class="nav-logo" aria-label="Nobin Morsalin Home">
+        <span class="logo-bracket">[</span>
+        <span class="logo-name">Nobin</span>
+        <span class="logo-lastname"> Morsalin</span>
+        <span class="logo-bracket">]</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li>
+          <a href="#about">About</a>
+        </li>
+
+        <li>
+          <a href="#services">Services</a>
+        </li>
+
+        <li>
+          <a href="#projects">Projects</a>
+        </li>
+
+        <li>
+          <a href="#clients">Clients</a>
+        </li>
+
+        <li>
+          <a href="#workflow">Process</a>
+        </li>
+
+        <li>
+          <a href="#contact" class="nav-cta">
+            Let's Talk
+          </a>
+        </li>
+      </ul>
+
+      <button
+        class="nav-toggle"
+        id="navToggle"
+        type="button"
+        aria-label="Open navigation menu"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
     </div>
-    <div class="hero-visual">
-      <div class="code-card">
-        <div class="code-header">
-          <span class="code-dot red"></span>
-          <span class="code-dot yellow"></span>
-          <span class="code-dot green"></span>
-          <span class="code-filename">nobin.config.js</span>
+  </nav>
+
+
+  <!-- ═══════════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════════ -->
+
+  <section class="hero" id="hero">
+
+    <div class="hero-bg">
+      <div class="grid-overlay"></div>
+
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+    </div>
+
+    <div class="container">
+
+      <div class="hero-content">
+
+        <div class="hero-eyebrow">
+          <span class="dot pulse"></span>
+          Available for projects
         </div>
-        <pre class="code-body"><code><span class="c-keyword">const</span> <span class="c-var">dev</span> = {
+
+        <h1 class="hero-title">
+          I Build Digital<br />
+
+          <span class="title-accent">
+            Experiences
+          </span><br />
+
+          That Work.
+        </h1>
+
+        <p class="hero-sub">
+          Web Development · UI/UX Design · API Integration<br />
+          Webhooks · Automation · Server Architecture · End-to-End Systems
+        </p>
+
+        <div class="hero-actions">
+
+          <a href="#projects" class="btn btn-primary">
+            View My Work
+          </a>
+
+          <a href="#contact" class="btn btn-ghost">
+            Start a Project →
+          </a>
+
+        </div>
+
+
+        <!-- HERO STATS -->
+
+        <div class="hero-stats">
+
+          <div class="stat" id="stat-projects">
+            <span class="stat-num">0</span>
+            <span class="stat-label">Projects</span>
+          </div>
+
+          <div class="stat-divider"></div>
+
+          <div class="stat" id="stat-services">
+            <span class="stat-num">0</span>
+            <span class="stat-label">Services</span>
+          </div>
+
+          <div class="stat-divider"></div>
+
+          <div class="stat" id="stat-clients">
+            <span class="stat-num">0</span>
+            <span class="stat-label">Clients</span>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- HERO CODE CARD -->
+
+      <div class="hero-visual">
+
+        <div class="code-card">
+
+          <div class="code-header">
+
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+
+            <span class="code-filename">
+              nobin.config.js
+            </span>
+
+          </div>
+
+          <pre class="code-body"><code><span class="c-keyword">const</span> <span class="c-var">developer</span> = {
   <span class="c-key">name</span>: <span class="c-str">"Nobin Morsalin"</span>,
   <span class="c-key">role</span>: <span class="c-str">"Full-Stack Developer"</span>,
+
   <span class="c-key">stack</span>: [
-    <span class="c-str">"React"</span>, <span class="c-str">"Node.js"</span>,
-    <span class="c-str">"APIs"</span>, <span class="c-str">"Webhooks"</span>
+    <span class="c-str">"Node.js"</span>,
+    <span class="c-str">"Laravel"</span>,
+    <span class="c-str">"JavaScript"</span>,
+    <span class="c-str">"APIs"</span>,
+    <span class="c-str">"Webhooks"</span>
   ],
+
   <span class="c-key">available</span>: <span class="c-bool">true</span>,
   <span class="c-key">coffee</span>: <span class="c-str">"always ☕"</span>
 }</code></pre>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ═══════════════════ ABOUT ═══════════════════ -->
-<section class="about section" id="about">
-  <div class="container">
-    <div class="section-label">// About me</div>
-    <div class="about-grid">
-      <div class="about-image-wrap">
-        <div class="about-image-frame">
-          <img src="assets/images/profile.jpg" alt="Nobin" class="about-img" id="profileImg" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'400\' viewBox=\'0 0 400 400\'><rect width=\'400\' height=\'400\' fill=\'%230d0d0d\'/><text x=\'50%25\' y=\'50%25\' font-size=\'120\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%2300f5a0\'>N</text></svg>'" />
-          <div class="image-border"></div>
         </div>
-        <div class="about-badge">
-          <span class="badge-icon">⚡</span>
-          <div>
-            <div class="badge-title">Fast Delivery</div>
-            <div class="badge-sub">Clean Code</div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       ABOUT
+  ═══════════════════════════════════════════════ -->
+
+  <section class="about section" id="about">
+
+    <div class="container">
+
+      <div class="section-label">
+        // About me
+      </div>
+
+      <div class="about-grid">
+
+        <!-- PROFILE IMAGE -->
+
+        <div class="about-image-wrap">
+
+          <div class="about-image-frame">
+
+            <img
+              src="assets/images/profile.jpg"
+              alt="Nobin Morsalin — Full-Stack Developer"
+              class="about-img"
+              id="profileImg"
+              loading="lazy"
+              onerror="this.src='data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27400%27><rect width=%27400%27 height=%27400%27 fill=%27%230d0d0d%27/><text x=%2750%25%27 y=%2750%25%27 font-size=%27100%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%2300f5a0%27>N</text></svg>'"
+            />
+
+            <div class="image-border"></div>
+
           </div>
-        </div>
-      </div>
-      <div class="about-content">
-        <h2 class="section-title" id="aboutTitle">Hello, I'm Nobin</h2>
-        <div class="about-text" id="aboutText">
-          <p>I'm a passionate web developer and digital craftsman from Bangladesh. I specialize in building complete digital solutions — from pixel-perfect UI/UX to robust backend architectures.</p>
-          <p>My expertise spans the full stack: beautiful frontends, powerful APIs, webhook integrations, and server-to-server connections. I don't just build websites — I build systems that work.</p>
-        </div>
-        <div class="skills-grid" id="skillsGrid">
-          <!-- Loaded from data -->
-        </div>
-        <a href="#contact" class="btn btn-primary mt-2">Work With Me</a>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ═══════════════════ SERVICES ═══════════════════ -->
-<section class="services section" id="services">
-  <div class="container">
-    <div class="section-label">// What I do</div>
-    <h2 class="section-title">Services</h2>
-    <p class="section-sub">End-to-end digital solutions built with precision</p>
-    <div class="services-grid" id="servicesGrid">
-      <!-- Loaded dynamically -->
-    </div>
-  </div>
-</section>
 
-<!-- ═══════════════════ PROJECTS ═══════════════════ -->
-<section class="projects section" id="projects">
-  <div class="container">
-    <div class="section-label">// My work</div>
-    <h2 class="section-title">Featured Projects</h2>
-    <p class="section-sub">Real solutions built for real clients</p>
-    <div class="filter-bar" id="filterBar">
-      <button class="filter-btn active" data-filter="all">All</button>
-    </div>
-    <div class="projects-grid" id="projectsGrid">
-      <!-- Loaded dynamically -->
-    </div>
-  </div>
-</section>
+          <div class="about-badge">
 
-<!-- ═══════════════════ WORKFLOW ═══════════════════ -->
-<section class="workflow section" id="workflow">
-  <div class="container">
-    <div class="section-label">// How I work</div>
-    <h2 class="section-title">My Workflow</h2>
-    <div class="workflow-steps" id="workflowSteps">
-      <!-- Loaded dynamically -->
-    </div>
-  </div>
-</section>
+            <span class="badge-icon">
+              ⚡
+            </span>
 
-<!-- ═══════════════════ CONTACT ═══════════════════ -->
-<section class="contact section" id="contact">
-  <div class="container">
-    <div class="contact-grid">
-      <div class="contact-info">
-        <div class="section-label">// Let's connect</div>
-        <h2 class="section-title">Start Your Project</h2>
-        <p class="contact-desc">Have an idea? Need a website, web app, or a complete digital system? Let's talk about how we can build it together.</p>
-        <div class="contact-items" id="contactItems">
-          <div class="contact-item">
-            <span class="contact-icon">📧</span>
             <div>
-              <div class="contact-label">Email</div>
-              <div class="contact-val" id="contactEmail">admin@nobin.dev</div>
+
+              <div class="badge-title">
+                Fast Delivery
+              </div>
+
+              <div class="badge-sub">
+                Clean Code
+              </div>
+
             </div>
+
           </div>
-          <div class="contact-item">
-            <span class="contact-icon">📍</span>
-            <div>
-              <div class="contact-label">Location</div>
-              <div class="contact-val">Bangladesh</div>
-            </div>
-          </div>
-          <div class="contact-item">
-            <span class="contact-icon">🕐</span>
-            <div>
-              <div class="contact-label">Response Time</div>
-              <div class="contact-val">Within 24 hours</div>
-            </div>
-          </div>
+
         </div>
+
+
+        <!-- ABOUT CONTENT -->
+
+        <div class="about-content">
+
+          <h2 class="section-title" id="aboutTitle">
+            Hello, I'm Nobin
+          </h2>
+
+          <div class="about-text" id="aboutText">
+
+            <p>
+              I'm a passionate web developer and digital craftsman from Bangladesh.
+              I specialize in building complete digital solutions — from pixel-perfect
+              UI/UX to robust backend architectures.
+            </p>
+
+            <p>
+              My expertise spans the full stack: beautiful frontends, powerful APIs,
+              webhook integrations, automation, and server-to-server connections.
+              I don't just build websites — I build systems that work.
+            </p>
+
+          </div>
+
+
+          <div class="skills-grid" id="skillsGrid">
+            <!-- Loaded from data.js -->
+          </div>
+
+
+          <a
+            href="#contact"
+            class="btn btn-primary mt-2"
+          >
+            Work With Me
+          </a>
+
+        </div>
+
       </div>
-      <div class="contact-form-wrap">
-        <form class="contact-form" id="contactForm">
-          <div class="form-row">
+
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SERVICES
+       Dynamic data — controlled from Admin
+  ═══════════════════════════════════════════════ -->
+
+  <section class="services section" id="services">
+
+    <div class="container">
+
+      <div class="section-label">
+        // What I do
+      </div>
+
+      <h2 class="section-title">
+        Our Services
+      </h2>
+
+      <p class="section-sub">
+        End-to-end digital solutions built with precision
+      </p>
+
+    </div>
+
+
+    <!--
+      IMPORTANT:
+      Main.js will populate this.
+      CSS will turn it into an infinite
+      right → left marquee.
+    -->
+
+    <div class="services-marquee">
+
+      <div
+        class="services-track"
+        id="servicesGrid"
+      >
+        <!-- Loaded dynamically from data.js -->
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       PROJECTS
+  ═══════════════════════════════════════════════ -->
+
+  <section class="projects section" id="projects">
+
+    <div class="container">
+
+      <div class="section-label">
+        // My work
+      </div>
+
+      <h2 class="section-title">
+        Featured Projects
+      </h2>
+
+      <p class="section-sub">
+        Real solutions built for real clients
+      </p>
+
+
+      <div
+        class="filter-bar"
+        id="filterBar"
+      >
+
+        <button
+          class="filter-btn active"
+          data-filter="all"
+          type="button"
+        >
+          All
+        </button>
+
+      </div>
+
+
+      <div
+        class="projects-grid"
+        id="projectsGrid"
+      >
+        <!-- Loaded dynamically -->
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       CLIENTS
+       Dynamic data — controlled from Admin
+  ═══════════════════════════════════════════════ -->
+
+  <section
+    class="clients-section section"
+    id="clients"
+  >
+
+    <div class="container">
+
+      <div class="section-label">
+        // Trusted work
+      </div>
+
+      <h2 class="section-title">
+        Our Clients
+      </h2>
+
+      <p class="section-sub">
+        Businesses and brands I've helped build, improve and scale.
+      </p>
+
+    </div>
+
+
+    <!--
+      IMPORTANT:
+      Main.js will populate this.
+      CSS will make it move continuously
+      LEFT → RIGHT.
+    -->
+
+    <div class="clients-marquee">
+
+      <div
+        class="clients-track"
+        id="clientsGrid"
+      >
+        <!-- Loaded dynamically from data.js -->
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       WORKFLOW / PROCESS
+  ═══════════════════════════════════════════════ -->
+
+  <section
+    class="workflow section"
+    id="workflow"
+  >
+
+    <div class="container">
+
+      <div class="section-label">
+        // How I work
+      </div>
+
+      <h2 class="section-title">
+        My Process
+      </h2>
+
+      <p class="section-sub">
+        From idea to launch — a clear and reliable process.
+      </p>
+
+      <div
+        class="workflow-steps"
+        id="workflowSteps"
+      >
+        <!-- Loaded dynamically -->
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       CONTACT
+  ═══════════════════════════════════════════════ -->
+
+  <section
+    class="contact section"
+    id="contact"
+  >
+
+    <div class="container">
+
+      <div class="contact-grid">
+
+        <!-- CONTACT INFO -->
+
+        <div class="contact-info">
+
+          <div class="section-label">
+            // Let's connect
+          </div>
+
+          <h2 class="section-title">
+            Start Your Project
+          </h2>
+
+          <p class="contact-desc">
+            Have an idea? Need a website, web app, API integration,
+            automation or a complete digital system?
+            Let's talk about how we can build it together.
+          </p>
+
+
+          <div
+            class="contact-items"
+            id="contactItems"
+          >
+
+            <div class="contact-item">
+
+              <span class="contact-icon">
+                📧
+              </span>
+
+              <div>
+
+                <div class="contact-label">
+                  Email
+                </div>
+
+                <div
+                  class="contact-val"
+                  id="contactEmail"
+                >
+                  admin@nobin.dev
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div class="contact-item">
+
+              <span class="contact-icon">
+                📍
+              </span>
+
+              <div>
+
+                <div class="contact-label">
+                  Location
+                </div>
+
+                <div class="contact-val">
+                  Bangladesh
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div class="contact-item">
+
+              <span class="contact-icon">
+                🕐
+              </span>
+
+              <div>
+
+                <div class="contact-label">
+                  Response Time
+                </div>
+
+                <div class="contact-val">
+                  Within 24 hours
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- CONTACT FORM -->
+
+        <div class="contact-form-wrap">
+
+          <form
+            class="contact-form"
+            id="contactForm"
+          >
+
+            <div class="form-row">
+
+              <div class="form-group">
+
+                <label for="contactName">
+                  Your Name
+                </label>
+
+                <input
+                  id="contactName"
+                  type="text"
+                  name="name"
+                  placeholder="John Doe"
+                  autocomplete="name"
+                  required
+                />
+
+              </div>
+
+
+              <div class="form-group">
+
+                <label for="contactEmailInput">
+                  Email Address
+                </label>
+
+                <input
+                  id="contactEmailInput"
+                  type="email"
+                  name="email"
+                  placeholder="john@example.com"
+                  autocomplete="email"
+                  required
+                />
+
+              </div>
+
+            </div>
+
+
             <div class="form-group">
-              <label>Your Name</label>
-              <input type="text" name="name" placeholder="John Doe" required />
+
+              <label for="contactSubject">
+                Subject
+              </label>
+
+              <input
+                id="contactSubject"
+                type="text"
+                name="subject"
+                placeholder="Project Inquiry"
+                required
+              />
+
             </div>
+
+
             <div class="form-group">
-              <label>Email Address</label>
-              <input type="email" name="email" placeholder="john@example.com" required />
+
+              <label for="contactMessage">
+                Message
+              </label>
+
+              <textarea
+                id="contactMessage"
+                name="message"
+                rows="5"
+                placeholder="Tell me about your project..."
+                required
+              ></textarea>
+
             </div>
-          </div>
-          <div class="form-group">
-            <label>Subject</label>
-            <input type="text" name="subject" placeholder="Project Inquiry" required />
-          </div>
-          <div class="form-group">
-            <label>Message</label>
-            <textarea name="message" rows="5" placeholder="Tell me about your project..." required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary btn-full" id="submitBtn">
-            <span class="btn-text">Send Message</span>
-            <span class="btn-loading hidden">Sending...</span>
-          </button>
-          <div class="form-status" id="formStatus"></div>
-        </form>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ═══════════════════ FOOTER ═══════════════════ -->
-<footer class="footer">
-  <div class="container">
-    <div class="footer-inner">
-      <div class="nav-logo">
-        <span class="logo-bracket">[</span>nobinmorsalin<span class="logo-bracket">]</span>
-      </div>
-      <p class="footer-copy">© 2025 Nobin Morsalin. Built with passion.</p>
-      <a href="/admin" class="footer-admin">Admin ↗</a>
-    </div>
-  </div>
-</footer>
 
-<!-- Live Chat Widget -->
-<div class="live-chat" id="liveChat">
-  <button class="chat-toggle" id="chatToggle">
-    <span class="chat-icon">💬</span>
-    <span class="chat-close hidden">✕</span>
-  </button>
-  <div class="chat-window hidden" id="chatWindow">
-    <div class="chat-header">
-      <div class="chat-avatar">N</div>
-      <div>
-        <div class="chat-name">Nobin Morsalin</div>
-        <div class="chat-status"><span class="dot pulse small"></span> Usually replies in minutes</div>
-      </div>
-    </div>
-    <div class="chat-messages" id="chatMessages">
-      <div class="chat-msg bot">
-        <div class="msg-bubble">Hey! 👋 How can I help you today?</div>
-        <div class="msg-time">Just now</div>
-      </div>
-    </div>
-    <div class="chat-input-wrap">
-      <input type="text" id="chatInput" placeholder="Type a message..." />
-      <button id="chatSend" class="chat-send-btn">→</button>
-    </div>
-  </div>
-</div>
+            <button
+              type="submit"
+              class="btn btn-primary btn-full"
+              id="submitBtn"
+            >
 
-<script src="assets/js/data.js"></script>
-<script src="assets/js/main.js"></script>
-<script src="assets/js/chat.js"></script>
+              <span class="btn-text">
+                Send Message
+              </span>
+
+              <span class="btn-loading hidden">
+                Sending...
+              </span>
+
+            </button>
+
+
+            <div
+              class="form-status"
+              id="formStatus"
+            ></div>
+
+          </form>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       FOOTER
+       Admin link intentionally removed from public UI.
+  ═══════════════════════════════════════════════ -->
+
+  <footer class="footer">
+
+    <div class="container">
+
+      <div class="footer-inner">
+
+        <a
+          href="#hero"
+          class="nav-logo"
+          aria-label="Nobin Morsalin Home"
+        >
+
+          <span class="logo-bracket">[</span>
+          <span class="logo-name">Nobin</span>
+          <span class="logo-lastname"> Morsalin</span>
+          <span class="logo-bracket">]</span>
+
+        </a>
+
+
+        <p class="footer-copy">
+          © 2026 Nobin Morsalin. Built with passion.
+        </p>
+
+
+        <!--
+          Admin link removed intentionally.
+          Admin remains accessible through its direct route.
+        -->
+
+      </div>
+
+    </div>
+
+  </footer>
+
+
+  <!-- ═══════════════════════════════════════════════
+       LIVE CHAT
+  ═══════════════════════════════════════════════ -->
+
+  <div
+    class="live-chat"
+    id="liveChat"
+  >
+
+    <button
+      class="chat-toggle"
+      id="chatToggle"
+      type="button"
+      aria-label="Open live chat"
+    >
+
+      <span class="chat-icon">
+        💬
+      </span>
+
+      <span class="chat-close hidden">
+        ✕
+      </span>
+
+    </button>
+
+
+    <div
+      class="chat-window hidden"
+      id="chatWindow"
+    >
+
+      <div class="chat-header">
+
+        <div class="chat-avatar">
+          N
+        </div>
+
+        <div>
+
+          <div class="chat-name">
+            Nobin Morsalin
+          </div>
+
+          <div class="chat-status">
+
+            <span class="dot pulse small"></span>
+
+            Usually replies in minutes
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div
+        class="chat-messages"
+        id="chatMessages"
+      >
+
+        <div class="chat-msg bot">
+
+          <div class="msg-bubble">
+            Hey! 👋 How can I help you today?
+          </div>
+
+          <div class="msg-time">
+            Just now
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="chat-input-wrap">
+
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Type a message..."
+          autocomplete="off"
+        />
+
+        <button
+          id="chatSend"
+          class="chat-send-btn"
+          type="button"
+          aria-label="Send message"
+        >
+          →
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════════ -->
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/chat.js"></script>
+
 </body>
 </html>
