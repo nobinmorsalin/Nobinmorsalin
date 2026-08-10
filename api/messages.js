@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    /api/messages
-   Portfolio Messages API
+   Portfolio + Live Chat Messages API
    Neon PostgreSQL
    ═══════════════════════════════════════════════ */
 
@@ -8,7 +8,6 @@ const { neon } = require('@neondatabase/serverless');
 
 module.exports = async function handler(req, res) {
 
-  /* CORS */
   res.setHeader(
     'Access-Control-Allow-Origin',
     '*'
@@ -30,23 +29,20 @@ module.exports = async function handler(req, res) {
 
   try {
 
-    /* DATABASE CHECK */
     if (!process.env.DATABASE_URL) {
-
       return res.status(500).json({
         ok: false,
         error: 'DATABASE_URL is not configured.'
       });
     }
 
-    const sql =
-      neon(process.env.DATABASE_URL);
+    const sql = neon(
+      process.env.DATABASE_URL
+    );
 
-
-    /* ═══════════════════════════════
-       CREATE TABLE
-    ═══════════════════════════════ */
-
+    /*
+     * Existing table.
+     */
     await sql`
       CREATE TABLE IF NOT EXISTS portfolio_messages (
         id BIGSERIAL PRIMARY KEY,
@@ -59,13 +55,64 @@ module.exports = async function handler(req, res) {
       )
     `;
 
+    /*
+     * Live-chat columns.
+     */
+    await sql`
+      ALTER TABLE portfolio_messages
+      ADD COLUMN IF NOT EXISTS conversation_id TEXT
+    `;
+
+    await sql`
+      ALTER TABLE portfolio_messages
+      ADD COLUMN IF NOT EXISTS sender TEXT
+    `;
+
 
     /* ═══════════════════════════════
-       GET — ALL MESSAGES
+       GET
     ═══════════════════════════════ */
 
     if (req.method === 'GET') {
 
+      const conversationId =
+        typeof req.query?.conversation_id === 'string'
+          ? req.query.conversation_id.trim()
+          : '';
+
+      /*
+       * Visitor requests only its own conversation.
+       * Includes visitor + bot + admin replies.
+       */
+      if (conversationId) {
+
+        const messages = await sql`
+          SELECT
+            id,
+            name,
+            email,
+            subject,
+            message,
+            is_read,
+            created_at,
+            conversation_id,
+            sender
+          FROM portfolio_messages
+          WHERE conversation_id = ${conversationId}
+          ORDER BY created_at ASC
+        `;
+
+        return res.status(200).json({
+          ok: true,
+          messages
+        });
+      }
+
+      /*
+       * Admin gets normal messages + visitor messages
+       * but bot auto-replies are hidden from the main
+       * Admin message list.
+       */
       const messages = await sql`
         SELECT
           id,
@@ -74,8 +121,12 @@ module.exports = async function handler(req, res) {
           subject,
           message,
           is_read,
-          created_at
+          created_at,
+          conversation_id,
+          sender
         FROM portfolio_messages
+        WHERE sender IS NULL
+           OR sender <> 'bot'
         ORDER BY created_at DESC
       `;
 
@@ -98,7 +149,7 @@ module.exports = async function handler(req, res) {
 
 
       /* ─────────────────────────────
-         CREATE MESSAGE
+         CREATE NORMAL MESSAGE
       ───────────────────────────── */
 
       if (action === 'create') {
@@ -131,7 +182,8 @@ module.exports = async function handler(req, res) {
         ) {
           return res.status(400).json({
             ok: false,
-            error: 'name, email, subject and message are required.'
+            error:
+              'name, email, subject and message are required.'
           });
         }
 
@@ -142,7 +194,8 @@ module.exports = async function handler(req, res) {
               email,
               subject,
               message,
-              is_read
+              is_read,
+              sender
             )
           VALUES
             (
@@ -150,7 +203,8 @@ module.exports = async function handler(req, res) {
               ${email},
               ${subject},
               ${message},
-              FALSE
+              FALSE,
+              'contact'
             )
           RETURNING
             id,
@@ -165,15 +219,126 @@ module.exports = async function handler(req, res) {
 
 
       /* ─────────────────────────────
-         MARK AS READ
+         ADMIN REPLY
+      ───────────────────────────── */
+
+      if (action === 'reply') {
+
+        const messageId =
+          Number(body.messageId);
+
+        const reply =
+          typeof body.message === 'string'
+            ? body.message.trim()
+            : '';
+
+        if (
+          !Number.isFinite(messageId) ||
+          messageId <= 0
+        ) {
+          return res.status(400).json({
+            ok: false,
+            error: 'Valid message ID is required.'
+          });
+        }
+
+        if (!reply) {
+          return res.status(400).json({
+            ok: false,
+            error: 'Reply message is required.'
+          });
+        }
+
+        /*
+         * Find the original live-chat message.
+         */
+        const original = await sql`
+          SELECT
+            id,
+            conversation_id
+          FROM portfolio_messages
+          WHERE id = ${messageId}
+          LIMIT 1
+        `;
+
+        if (!original.length) {
+          return res.status(404).json({
+            ok: false,
+            error: 'Original message not found.'
+          });
+        }
+
+        const conversationId =
+          original[0].conversation_id;
+
+        if (!conversationId) {
+          return res.status(400).json({
+            ok: false,
+            error:
+              'This message is not a live-chat conversation.'
+          });
+        }
+
+        /*
+         * Save Admin reply into the same conversation.
+         */
+        const inserted = await sql`
+          INSERT INTO portfolio_messages
+            (
+              name,
+              email,
+              subject,
+              message,
+              is_read,
+              conversation_id,
+              sender
+            )
+          VALUES
+            (
+              'Nobin Morsalin',
+              'admin@portfolio.local',
+              'Admin Reply',
+              ${reply},
+              TRUE,
+              ${conversationId},
+              'admin'
+            )
+          RETURNING
+            id,
+            created_at,
+            conversation_id,
+            sender
+        `;
+
+        /*
+         * Mark original visitor message as read.
+         */
+        await sql`
+          UPDATE portfolio_messages
+          SET is_read = TRUE
+          WHERE id = ${messageId}
+        `;
+
+        return res.status(201).json({
+          ok: true,
+          reply: inserted[0]
+        });
+      }
+
+
+      /* ─────────────────────────────
+         MARK READ
       ───────────────────────────── */
 
       if (action === 'read') {
 
-        const id = body.id;
+        const id =
+          Number(body.id);
 
-        if (!id) {
-
+        if (
+          !Number.isFinite(id) ||
+          id <= 0
+        ) {
           return res.status(400).json({
             ok: false,
             error: 'Message ID is required.'
@@ -207,7 +372,7 @@ module.exports = async function handler(req, res) {
 
       const body = req.body || {};
 
-      /* Delete all */
+
       if (body.all === true) {
 
         await sql`
@@ -220,12 +385,17 @@ module.exports = async function handler(req, res) {
       }
 
 
-      /* Delete one */
-      if (body.id) {
+      const id =
+        Number(body.id);
+
+      if (
+        Number.isFinite(id) &&
+        id > 0
+      ) {
 
         await sql`
           DELETE FROM portfolio_messages
-          WHERE id = ${body.id}
+          WHERE id = ${id}
         `;
 
         return res.status(200).json({
@@ -240,10 +410,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-
-    /* ═══════════════════════════════
-       METHOD NOT ALLOWED
-    ═══════════════════════════════ */
 
     return res.status(405).json({
       ok: false,
