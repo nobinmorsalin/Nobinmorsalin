@@ -1,0 +1,368 @@
+/* =========================================================
+   NOBIN MORSALIN — PORTFOLIO ENHANCEMENTS
+   Safe additive stylesheet
+   Does not replace existing main.css
+========================================================= */
+
+
+/* =========================================================
+   BRAND / HEADER
+========================================================= */
+
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.logo-name,
+.logo-lastname {
+  display: inline;
+}
+
+.logo-lastname {
+  margin-left: 2px;
+}
+
+
+/* =========================================================
+   PROFILE IMAGE
+========================================================= */
+
+.about-image-wrap {
+  width: min(100%, 420px);
+  margin-inline: auto;
+}
+
+.about-image-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.08;
+  overflow: hidden;
+  border-radius: 28px;
+}
+
+.about-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center top;
+}
+
+
+/* =========================================================
+   SERVICES — RIGHT TO LEFT
+========================================================= */
+
+.services-marquee {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 20px 0 35px;
+}
+
+.services-track {
+  display: flex;
+  width: max-content;
+  gap: 24px;
+  padding-left: 24px;
+  will-change: transform;
+
+  animation: services-right-to-left 32s linear infinite;
+}
+
+.services-track:hover {
+  animation-play-state: paused;
+}
+
+.services-track .service-card {
+  width: 320px;
+  min-width: 320px;
+  flex: 0 0 320px;
+}
+
+
+/*
+  The JS will duplicate the service cards.
+  Moving by 50% creates a seamless loop.
+*/
+
+@keyframes services-right-to-left {
+
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(-50% - 12px));
+  }
+
+}
+
+
+/* =========================================================
+   CLIENTS
+   LEFT TO RIGHT
+========================================================= */
+
+.clients-section {
+  width: 100%;
+  overflow: hidden;
+}
+
+.clients-marquee {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 20px 0 35px;
+}
+
+.clients-track {
+  display: flex;
+  width: max-content;
+  gap: 20px;
+  padding-left: 20px;
+  will-change: transform;
+
+  animation: clients-left-to-right 30s linear infinite;
+}
+
+.clients-track:hover {
+  animation-play-state: paused;
+}
+
+
+@keyframes clients-left-to-right {
+
+  0% {
+    transform: translateX(calc(-50% - 10px));
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+
+}
+
+
+/* =========================================================
+   CLIENT CARD
+========================================================= */
+
+.client-card {
+  width: 270px;
+  min-width: 270px;
+  min-height: 125px;
+
+  flex: 0 0 270px;
+
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  padding: 20px;
+
+  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border-radius: 18px;
+
+  background: var(
+    --bg-card,
+    rgba(255,255,255,.03)
+  );
+
+  transition:
+    transform .25s ease,
+    border-color .25s ease,
+    background .25s ease;
+}
+
+.client-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0,245,160,.35);
+}
+
+
+.client-logo {
+  width: 58px;
+  height: 58px;
+
+  min-width: 58px;
+
+  object-fit: contain;
+
+  padding: 7px;
+
+  border-radius: 14px;
+
+  background: rgba(255,255,255,.04);
+
+  border: 1px solid var(
+    --border,
+    rgba(255,255,255,.08)
+  );
+}
+
+
+.client-logo-fallback {
+  width: 58px;
+  height: 58px;
+
+  min-width: 58px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 14px;
+
+  background: rgba(0,245,160,.08);
+
+  border: 1px solid rgba(0,245,160,.2);
+
+  color: var(--accent, #00f5a0);
+
+  font-weight: 800;
+  font-size: 20px;
+}
+
+
+.client-info {
+  min-width: 0;
+}
+
+
+.client-name {
+  font-family: var(
+    --font-head,
+    'Syne',
+    sans-serif
+  );
+
+  font-size: 15px;
+  font-weight: 700;
+
+  line-height: 1.25;
+}
+
+
+.client-service {
+  margin-top: 5px;
+
+  font-size: 12px;
+  line-height: 1.45;
+
+  color: var(
+    --text-muted,
+    rgba(255,255,255,.55)
+  );
+}
+
+
+/* =========================================================
+   FRONTEND ADMIN ENTRY — HIDE
+========================================================= */
+
+.footer-admin,
+.admin-link,
+.admin-login-link,
+[data-admin-link] {
+  display: none !important;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .about-image-wrap {
+    width: min(100%, 320px);
+  }
+
+  .about-image-frame {
+    border-radius: 22px;
+  }
+
+  .services-track {
+    gap: 16px;
+    padding-left: 16px;
+    animation-duration: 28s;
+  }
+
+  .services-track .service-card {
+    width: 285px;
+    min-width: 285px;
+    flex-basis: 285px;
+  }
+
+  .clients-track {
+    gap: 15px;
+    animation-duration: 27s;
+  }
+
+  .client-card {
+    width: 235px;
+    min-width: 235px;
+    flex-basis: 235px;
+
+    min-height: 105px;
+
+    padding: 16px;
+  }
+
+  .client-logo,
+  .client-logo-fallback {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .services-track .service-card {
+    width: 265px;
+    min-width: 265px;
+    flex-basis: 265px;
+  }
+
+  .client-card {
+    width: 220px;
+    min-width: 220px;
+    flex-basis: 220px;
+  }
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .services-track,
+  .clients-track {
+    animation: none;
+    transform: none;
+  }
+
+}
+
+
+/* =========================================================
+   PREVENT HORIZONTAL PAGE SCROLL
+========================================================= */
+
+html,
+body {
+  overflow-x: hidden;
+}
