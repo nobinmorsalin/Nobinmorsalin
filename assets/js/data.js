@@ -1,8 +1,12 @@
 /* ═══════════════════════════════════════════════
    DATA STORE — Portfolio content management
-   All data is stored in localStorage so the
-   admin panel can update it live.
-   ═══════════════════════════════════════════════ */
+
+   IMPORTANT:
+   - Existing localStorage keys are preserved.
+   - Admin changes remain editable.
+   - New Clients data is added safely.
+   - Existing data will NOT be overwritten automatically.
+═══════════════════════════════════════════════ */
 
 const DATA_KEYS = {
   services:  'portfolio_services',
@@ -11,153 +15,527 @@ const DATA_KEYS = {
   skills:    'portfolio_skills',
   about:     'portfolio_about',
   settings:  'portfolio_settings',
+  clients:   'portfolio_clients',
 };
 
-/* ── DEFAULT DATA ── */
+
+/* ═══════════════════════════════════════════════
+   DEFAULT DATA
+═══════════════════════════════════════════════ */
+
 const DEFAULTS = {
+
+  /* ─────────────────────────────────────────────
+     SITE SETTINGS
+  ───────────────────────────────────────────── */
+
   settings: {
-    name: 'Nobin',
-    tagline: 'Web Developer & Digital Craftsman',
+    name: 'Nobin Morsalin',
+    tagline: 'Full-Stack Developer & Digital Craftsman',
+
     email: 'admin@nobin.dev',
     whatsapp: '',
+
     github: 'https://github.com/nobin',
     linkedin: '',
+
     smtpConfigured: false,
   },
 
+
+  /* ─────────────────────────────────────────────
+     ABOUT
+  ───────────────────────────────────────────── */
+
   about: {
     title: "Hello, I'm Nobin",
-    bio1: "I'm a passionate web developer and digital craftsman from Bangladesh. I specialize in building complete digital solutions — from pixel-perfect UI/UX to robust backend architectures.",
-    bio2: "My expertise spans the full stack: beautiful frontends, powerful APIs, webhook integrations, and server-to-server connections. I don't just build websites — I build systems that work.",
+
+    bio1:
+      "I'm a passionate web developer and digital craftsman from Bangladesh. I specialize in building complete digital solutions — from pixel-perfect UI/UX to robust backend architectures.",
+
+    bio2:
+      "My expertise spans the full stack: beautiful frontends, powerful APIs, webhook integrations, and server-to-server connections. I don't just build websites — I build systems that work.",
   },
 
+
+  /* ─────────────────────────────────────────────
+     SKILLS
+  ───────────────────────────────────────────── */
+
   skills: [
-    'HTML / CSS', 'JavaScript', 'React', 'Node.js',
-    'REST APIs', 'Webhooks', 'UI/UX Design',
-    'Figma', 'Server Architecture', 'SMTP / Email',
-    'Postback / Tracking', 'Git / GitHub'
+    'HTML / CSS',
+    'JavaScript',
+    'React',
+    'Node.js',
+    'REST APIs',
+    'Webhooks',
+    'UI/UX Design',
+    'Figma',
+    'Server Architecture',
+    'SMTP / Email',
+    'Postback / Tracking',
+    'Git / GitHub'
   ],
 
+
+  /* ─────────────────────────────────────────────
+     SERVICES
+  ───────────────────────────────────────────── */
+
   services: [
+
     {
       id: 's1',
       icon: '🎨',
       name: 'UI/UX Design',
-      desc: 'Beautiful, intuitive interfaces designed in Figma — pixel-perfect and user-focused. From wireframes to final design handoff.',
+      desc:
+        'Beautiful, intuitive interfaces designed in Figma — pixel-perfect and user-focused. From wireframes to final design handoff.',
     },
+
     {
       id: 's2',
       icon: '🌐',
       name: 'Web Development',
-      desc: 'Fast, responsive websites and web apps built with modern technologies. Clean code, optimized performance.',
+      desc:
+        'Fast, responsive websites and web apps built with modern technologies. Clean code and optimized performance.',
     },
+
     {
       id: 's3',
       icon: '🔗',
       name: 'API Integration',
-      desc: 'Seamless integration of third-party APIs. REST, GraphQL, OAuth — I connect systems that need to talk to each other.',
+      desc:
+        'Seamless integration of third-party APIs. REST, GraphQL, OAuth and custom API systems.',
     },
+
     {
       id: 's4',
       icon: '⚡',
       name: 'Webhook Systems',
-      desc: 'Real-time event-driven architectures. Server-to-server communication, postback URLs, tracking pixels — all handled.',
+      desc:
+        'Real-time event-driven architectures, server-to-server communication, postback URLs and tracking systems.',
     },
+
     {
       id: 's5',
       icon: '📧',
       name: 'Email Systems',
-      desc: 'SMTP setup, transactional emails, email templates, delivery optimization and monitoring.',
+      desc:
+        'SMTP setup, transactional emails, email templates, delivery optimization and monitoring.',
     },
+
     {
       id: 's6',
       icon: '🛒',
       name: 'E-Commerce',
-      desc: 'Online stores with payment gateways, inventory management, order tracking and complete backend systems.',
+      desc:
+        'Online stores with payment gateways, inventory management, order tracking and complete backend systems.',
     },
+
   ],
 
+
+  /* ─────────────────────────────────────────────
+     PROJECTS
+  ───────────────────────────────────────────── */
+
   projects: [
+
     {
       id: 'p1',
       title: 'SaaS Dashboard',
-      desc: 'A complete analytics dashboard with real-time data, charts, and user management.',
+      desc:
+        'A complete analytics dashboard with real-time data, charts and user management.',
+
       image: '',
-      tags: ['React', 'Node.js', 'API'],
+
+      tags: [
+        'React',
+        'Node.js',
+        'API'
+      ],
+
       category: 'Web App',
+
       live: '#',
       github: '#',
     },
+
+
     {
       id: 'p2',
       title: 'E-Commerce Platform',
-      desc: 'Full-stack online store with payment integration, webhook order tracking and admin panel.',
+      desc:
+        'Full-stack online store with payment integration, webhook order tracking and admin panel.',
+
       image: '',
-      tags: ['JavaScript', 'SMTP', 'Webhooks'],
+
+      tags: [
+        'JavaScript',
+        'SMTP',
+        'Webhooks'
+      ],
+
       category: 'E-Commerce',
+
       live: '#',
       github: '#',
     },
+
+
     {
       id: 'p3',
       title: 'API Gateway System',
-      desc: 'Custom API gateway with rate limiting, auth, postback logging and server-to-server routing.',
+      desc:
+        'Custom API gateway with rate limiting, authentication, postback logging and server-to-server routing.',
+
       image: '',
-      tags: ['Node.js', 'REST API', 'Server'],
+
+      tags: [
+        'Node.js',
+        'REST API',
+        'Server'
+      ],
+
       category: 'Backend',
+
       live: '#',
       github: '',
     },
+
   ],
+
+
+  /* ─────────────────────────────────────────────
+     CLIENTS
+
+     Controlled from Admin in the next step.
+     logo can be:
+       - normal image URL
+       - base64 image
+       - empty
+
+  ───────────────────────────────────────────── */
+
+  clients: [
+
+    {
+      id: 'c1',
+
+      name: 'CodeBuzz',
+
+      service: 'Web Development & Digital Solutions',
+
+      logo: '',
+
+      website: '',
+
+      visible: true,
+    },
+
+
+    {
+      id: 'c2',
+
+      name: 'OfferLutBox',
+
+      service: 'Offerwall & Affiliate System',
+
+      logo: '',
+
+      website: '',
+
+      visible: true,
+    },
+
+
+    {
+      id: 'c3',
+
+      name: 'Quick Kart',
+
+      service: 'E-Commerce Platform Development',
+
+      logo: '',
+
+      website: '',
+
+      visible: true,
+    },
+
+
+    {
+      id: 'c4',
+
+      name: 'SubscribeMoney',
+
+      service: 'GPT Reward Platform Development',
+
+      logo: '',
+
+      website: '',
+
+      visible: true,
+    },
+
+  ],
+
+
+  /* ─────────────────────────────────────────────
+     WORKFLOW
+  ───────────────────────────────────────────── */
 
   workflow: [
-    { id: 'w1', icon: '💬', title: 'Discovery', desc: 'Understanding your goals, audience, and requirements through in-depth consultation.' },
-    { id: 'w2', icon: '📐', title: 'Design', desc: 'Creating wireframes and high-fidelity mockups in Figma for your approval.' },
-    { id: 'w3', icon: '⚙️', title: 'Development', desc: 'Building with clean, scalable code following best practices.' },
-    { id: 'w4', icon: '🔗', title: 'Integration', desc: 'Connecting APIs, webhooks, payment gateways and third-party services.' },
-    { id: 'w5', icon: '🧪', title: 'Testing', desc: 'Thorough QA across devices and browsers before launch.' },
-    { id: 'w6', icon: '🚀', title: 'Launch', desc: 'Deployment, domain setup, and ongoing support after go-live.' },
+
+    {
+      id: 'w1',
+      icon: '💬',
+      title: 'Discovery',
+      desc:
+        'Understanding your goals, audience and requirements through in-depth consultation.'
+    },
+
+    {
+      id: 'w2',
+      icon: '📐',
+      title: 'Design',
+      desc:
+        'Creating wireframes and high-fidelity mockups in Figma for your approval.'
+    },
+
+    {
+      id: 'w3',
+      icon: '⚙️',
+      title: 'Development',
+      desc:
+        'Building with clean, scalable code following best practices.'
+    },
+
+    {
+      id: 'w4',
+      icon: '🔗',
+      title: 'Integration',
+      desc:
+        'Connecting APIs, webhooks, payment gateways and third-party services.'
+    },
+
+    {
+      id: 'w5',
+      icon: '🧪',
+      title: 'Testing',
+      desc:
+        'Thorough QA across devices and browsers before launch.'
+    },
+
+    {
+      id: 'w6',
+      icon: '🚀',
+      title: 'Launch',
+      desc:
+        'Deployment, domain setup and ongoing support after go-live.'
+    },
+
   ],
+
 };
 
-/* ── DATA ACCESS FUNCTIONS ── */
+
+/* ═══════════════════════════════════════════════
+   DATA ACCESS
+═══════════════════════════════════════════════ */
+
 const PortfolioData = {
+
   get(key) {
+
     try {
+
       const raw = localStorage.getItem(DATA_KEYS[key]);
-      return raw ? JSON.parse(raw) : DEFAULTS[key];
-    } catch { return DEFAULTS[key]; }
+
+      if (raw !== null) {
+
+        const parsed = JSON.parse(raw);
+
+        /*
+          Safety:
+          If an old installation has an invalid value,
+          fall back to the default.
+        */
+
+        if (parsed !== null && parsed !== undefined) {
+          return parsed;
+        }
+
+      }
+
+      return DEFAULTS[key];
+
+    } catch (error) {
+
+      console.warn(
+        `PortfolioData.get("${key}") failed:`,
+        error
+      );
+
+      return DEFAULTS[key];
+
+    }
+
   },
+
+
   set(key, value) {
+
     try {
-      localStorage.setItem(DATA_KEYS[key], JSON.stringify(value));
+
+      localStorage.setItem(
+        DATA_KEYS[key],
+        JSON.stringify(value)
+      );
+
       return true;
-    } catch { return false; }
+
+    } catch (error) {
+
+      console.error(
+        `PortfolioData.set("${key}") failed:`,
+        error
+      );
+
+      return false;
+
+    }
+
   },
+
+
   reset(key) {
-    localStorage.removeItem(DATA_KEYS[key]);
+
+    try {
+
+      localStorage.removeItem(
+        DATA_KEYS[key]
+      );
+
+      return true;
+
+    } catch {
+
+      return false;
+
+    }
+
   },
+
+
   resetAll() {
-    Object.values(DATA_KEYS).forEach(k => localStorage.removeItem(k));
-  }
+
+    try {
+
+      Object.values(DATA_KEYS).forEach(key => {
+
+        localStorage.removeItem(key);
+
+      });
+
+      return true;
+
+    } catch {
+
+      return false;
+
+    }
+
+  },
+
 };
 
-/* Auth */
+
+/* ═══════════════════════════════════════════════
+   ADMIN AUTH
+═══════════════════════════════════════════════ */
+
 const AUTH = {
+
   username: 'admin@nobin',
+
   password: '77441122',
+
   key: 'portfolio_admin_session',
-  login(u, p) {
-    if (u === this.username && p === this.password) {
-      sessionStorage.setItem(this.key, btoa(Date.now().toString()));
-      return true;
+
+
+  login(username, password) {
+
+    if (
+      username === this.username &&
+      password === this.password
+    ) {
+
+      try {
+
+        sessionStorage.setItem(
+          this.key,
+          btoa(
+            `${Date.now()}_${Math.random()}`
+          )
+        );
+
+        return true;
+
+      } catch {
+
+        return false;
+
+      }
+
     }
+
     return false;
+
   },
+
+
   check() {
-    return !!sessionStorage.getItem(this.key);
+
+    try {
+
+      return Boolean(
+        sessionStorage.getItem(this.key)
+      );
+
+    } catch {
+
+      return false;
+
+    }
+
   },
+
+
   logout() {
-    sessionStorage.removeItem(this.key);
-  }
+
+    try {
+
+      sessionStorage.removeItem(
+        this.key
+      );
+
+    } catch {
+
+      /* ignore */
+
+    }
+
+  },
+
 };
+
+
+/* ═══════════════════════════════════════════════
+   SAFE GLOBAL ACCESS
+═══════════════════════════════════════════════ */
+
+window.PortfolioData = PortfolioData;
+window.DEFAULTS = DEFAULTS;
+window.AUTH = AUTH;
+window.DATA_KEYS = DATA_KEYS;
