@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════
-   /api/chat — Live Chat + Database
-   Saves visitor messages to Neon DB and returns
-   an automatic reply.
+   /api/chat
+   Visitor Live Chat
+   Neon Database + Auto Reply
    ═══════════════════════════════════════════════ */
 
 const { neon } = require('@neondatabase/serverless');
@@ -45,14 +45,28 @@ const AUTO_REPLIES = [
   }
 ];
 
+function getAutoReply(message) {
+  const found = AUTO_REPLIES.find(
+    item => item.match.test(message)
+  );
+
+  return found
+    ? found.reply
+    : "Thanks for your message! 👋 I've received it and will get back to you soon.";
+}
+
 module.exports = async function handler(req, res) {
 
-  /* CORS */
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader(
+    'Access-Control-Allow-Origin',
+    '*'
+  );
+
   res.setHeader(
     'Access-Control-Allow-Methods',
     'POST, OPTIONS'
   );
+
   res.setHeader(
     'Access-Control-Allow-Headers',
     'Content-Type'
@@ -71,34 +85,47 @@ module.exports = async function handler(req, res) {
 
   try {
 
-    /* DATABASE */
     if (!process.env.DATABASE_URL) {
-      console.error('DATABASE_URL is missing');
-
       return res.status(500).json({
         ok: false,
         error: 'DATABASE_URL is not configured.'
       });
     }
 
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(
+      process.env.DATABASE_URL
+    );
 
-    /* REQUEST */
-    const { message } = req.body || {};
+    const body = req.body || {};
 
-    if (
-      typeof message !== 'string' ||
-      !message.trim()
-    ) {
+    const message =
+      typeof body.message === 'string'
+        ? body.message.trim()
+        : '';
+
+    const conversationId =
+      typeof body.conversationId === 'string'
+        ? body.conversationId.trim()
+        : '';
+
+    if (!message) {
       return res.status(400).json({
         ok: false,
         error: 'Message is required.'
       });
     }
 
-    const cleanMessage = message.trim();
+    if (!conversationId) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Conversation ID is required.'
+      });
+    }
 
-    /* Make sure table exists */
+    /*
+     * Make sure the existing table is available.
+     * Existing contact messages are NOT deleted.
+     */
     await sql`
       CREATE TABLE IF NOT EXISTS portfolio_messages (
         id BIGSERIAL PRIMARY KEY,
@@ -112,49 +139,94 @@ module.exports = async function handler(req, res) {
     `;
 
     /*
-     * SAVE LIVE CHAT MESSAGE
-     *
-     * We use a fixed visitor identity because
-     * the current chat UI does not ask for name/email.
+     * Add live-chat columns to the existing table.
      */
-    const inserted = await sql`
+    await sql`
+      ALTER TABLE portfolio_messages
+      ADD COLUMN IF NOT EXISTS conversation_id TEXT
+    `;
+
+    await sql`
+      ALTER TABLE portfolio_messages
+      ADD COLUMN IF NOT EXISTS sender TEXT
+    `;
+
+    /*
+     * Save visitor message.
+     */
+    const visitorMessage = await sql`
       INSERT INTO portfolio_messages
-        (name, email, subject, message, is_read)
+        (
+          name,
+          email,
+          subject,
+          message,
+          is_read,
+          conversation_id,
+          sender
+        )
       VALUES
         (
           'Live Chat Visitor',
           'livechat@visitor.local',
           'Live Chat',
-          ${cleanMessage},
-          FALSE
+          ${message},
+          FALSE,
+          ${conversationId},
+          'visitor'
         )
       RETURNING
         id,
         created_at
     `;
 
-    /* AUTO REPLY */
-    const matched = AUTO_REPLIES.find(
-      item => item.match.test(cleanMessage)
-    );
+    /*
+     * Automatic reply.
+     * Saved into the same conversation so the
+     * visitor can see it again after refresh.
+     */
+    const reply = getAutoReply(message);
 
-    const reply = matched
-      ? matched.reply
-      : "Thanks for your message! 👋 I've received it and will get back to you soon.";
-
-    /* Small natural delay */
-    await new Promise(resolve => setTimeout(resolve, 700));
+    const botMessage = await sql`
+      INSERT INTO portfolio_messages
+        (
+          name,
+          email,
+          subject,
+          message,
+          is_read,
+          conversation_id,
+          sender
+        )
+      VALUES
+        (
+          'Nobin Morsalin',
+          'admin@portfolio.local',
+          'Live Chat Reply',
+          ${reply},
+          TRUE,
+          ${conversationId},
+          'bot'
+        )
+      RETURNING
+        id,
+        created_at
+    `;
 
     return res.status(200).json({
       ok: true,
       saved: true,
-      messageId: inserted[0]?.id || null,
+      messageId: visitorMessage[0]?.id || null,
+      replyId: botMessage[0]?.id || null,
       reply
     });
 
   } catch (error) {
 
-    console.error('LIVE CHAT ERROR:', error);
+    console.error(
+      'LIVE CHAT ERROR:',
+      error
+    );
 
     return res.status(500).json({
       ok: false,
