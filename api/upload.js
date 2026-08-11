@@ -34,13 +34,20 @@ function safeBaseName(filename = 'image') {
   return allowedExtensions.has(extension) ? extension : '.bin';
 }
 
+// The Blob connection was created with the custom prefix
+// `BLOB_READ_WRITE_TOKEN`, so Vercel generated the read/write token as
+// `BLOB_READ_WRITE_TOKEN_READ_WRITE_TOKEN`.
+const BLOB_TOKEN =
+  process.env.BLOB_READ_WRITE_TOKEN ||
+  process.env.BLOB_READ_WRITE_TOKEN_READ_WRITE_TOKEN;
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return json(res, 405, { ok: false, error: 'Method not allowed.' });
   }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!BLOB_TOKEN) {
     return json(res, 500, { ok: false, error: 'Image storage is not configured.' });
   }
 
@@ -84,7 +91,7 @@ export default async function handler(req, res) {
       access: 'public',
       addRandomSuffix: false,
       contentType: file.mimetype,
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: BLOB_TOKEN,
     });
 
     return json(res, 200, {
