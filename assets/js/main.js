@@ -809,7 +809,6 @@
                 }
 
               });
-
           }
         );
 
@@ -1008,7 +1007,6 @@
     const nav =
       $('#nav');
 
-
     if (nav) {
 
       const updateNav =
@@ -1021,18 +1019,14 @@
 
         };
 
-
       window.addEventListener(
         'scroll',
         updateNav,
         { passive: true }
       );
 
-
       updateNav();
-
     }
-
   }
 
 
@@ -1053,7 +1047,6 @@
       async (event) => {
 
         event.preventDefault();
-
 
         const button =
           $('#submitBtn', form);
@@ -1096,7 +1089,6 @@
 
         const formData =
           new FormData(form);
-
 
         const payload = {
 
@@ -1141,36 +1133,30 @@
               }
             );
 
-
           const result =
             await response.json()
               .catch(() => ({}));
 
 
           if (!response.ok) {
-
             throw new Error(
               result.message ||
               'Unable to send message.'
             );
-
           }
 
 
           if (status) {
-
             status.textContent =
               result.message ||
               'Message sent successfully!';
 
             status.className =
               'form-status success';
-
           }
 
 
           form.reset();
-
 
         } catch (error) {
 
@@ -1179,16 +1165,13 @@
             error
           );
 
-
           if (status) {
-
             status.textContent =
               error.message ||
               'Something went wrong. Please try again.';
 
             status.className =
               'form-status error';
-
           }
 
         } finally {
@@ -1232,7 +1215,6 @@
             const targetID =
               link.getAttribute('href');
 
-
             if (
               !targetID ||
               targetID === '#'
@@ -1246,11 +1228,9 @@
                 targetID
               );
 
-
             if (!target) {
               return;
             }
-
 
             event.preventDefault();
 
@@ -1258,12 +1238,10 @@
             const nav =
               $('#nav');
 
-
             const navHeight =
               nav
                 ? nav.offsetHeight
                 : 0;
-
 
             const top =
               target.getBoundingClientRect()
@@ -1271,21 +1249,16 @@
               window.scrollY -
               navHeight;
 
-
             window.scrollTo({
-
               top,
-
               behavior:
                 'smooth'
-
             });
 
           }
         );
 
       });
-
   }
 
 
@@ -1311,7 +1284,6 @@
         );
 
       });
-
   }
 
 
@@ -1343,7 +1315,15 @@
      INITIALIZE
   ======================================================= */
 
-  function init() {
+  async function init() {
+
+    try {
+      if (window.PortfolioData && typeof window.PortfolioData.load === 'function') {
+        await window.PortfolioData.load();
+      }
+    } catch (error) {
+      console.error('Portfolio data load failed:', error);
+    }
 
     renderSettings();
 
@@ -1371,7 +1351,6 @@
     setupSmoothScroll();
 
     setupImageFallbacks();
-
   }
 
 
@@ -1392,7 +1371,6 @@
   } else {
 
     init();
-
   }
 
 })();
