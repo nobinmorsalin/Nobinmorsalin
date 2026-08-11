@@ -73,15 +73,10 @@ const DEFAULTS = {
 
 const PortfolioData = {
   _remote: null,
-  _version: null,
+  _version: 0,
   _loaded: false,
+  _conflict: false,
   _loading: null,
-
-  _localKeysPresent() {
-    return Object.values(DATA_KEYS).some((key) => {
-      try { return localStorage.getItem(key) !== null; } catch { return false; }
-    });
-  },
 
   async load() {
     if (this._loading) return this._loading;
@@ -95,7 +90,17 @@ const PortfolioData = {
         });
 
         if (response.status === 404) {
-          return { ok: false, initialized: false, conflict: false };
+          this._remote = this.cloneDefaults();
+          this._version = 0;
+          this._loaded = false;
+          this._conflict = this.hasLocalStorageData();
+          return {
+            ok: false,
+            initialized: false,
+            conflict: this._conflict,
+            data: this._remote,
+            version: 0,
+          };
         }
 
         const result = await response.json();
@@ -106,16 +111,21 @@ const PortfolioData = {
         this._remote = result.data;
         this._version = Number(result.version);
         this._loaded = true;
+        this._conflict = this.hasLocalStorageData();
 
         return {
           ok: true,
           initialized: true,
-          conflict: this._localKeysPresent(),
+          conflict: this._conflict,
           data: result.data,
           version: this._version,
         };
       } catch (error) {
         console.warn('PortfolioData.load failed:', error);
+        this._remote = null;
+        this._version = 0;
+        this._loaded = false;
+        this._conflict = false;
         return { ok: false, initialized: false, conflict: false, error };
       } finally {
         this._loading = null;
@@ -123,24 +133,6 @@ const PortfolioData = {
     })();
 
     return this._loading;
-  },
-
-  get(key) {
-    try {
-      if (this._loaded && this._remote && Object.prototype.hasOwnProperty.call(this._remote, key)) {
-        return this._remote[key];
-      }
-
-      const raw = localStorage.getItem(DATA_KEYS[key]);
-      if (raw !== null) {
-        const parsed = JSON.parse(raw);
-        if (parsed !== null && parsed !== undefined) return parsed;
-      }
-    } catch (error) {
-      console.warn(`PortfolioData.get("${key}") failed:`, error);
-    }
-
-    return DEFAULTS[key];
   },
 
   async save(key, value) {
@@ -174,7 +166,7 @@ const PortfolioData = {
       if (response.status === 409) {
         this._loaded = false;
         this._remote = null;
-        this._version = null;
+        this._version = 0;
       }
       throw new Error(result.error || 'Failed to save portfolio data');
     }
@@ -182,9 +174,9 @@ const PortfolioData = {
     this._remote = result.data;
     this._version = Number(result.version);
     this._loaded = true;
+    this._conflict = false;
 
-    // Keep the existing localStorage value only as a compatibility cache.
-    // It is never used as the primary persistence layer after load().
+    // Legacy localStorage remains only as a compatibility cache.
     try {
       localStorage.setItem(DATA_KEYS[key], JSON.stringify(value));
     } catch (error) {
@@ -194,10 +186,30 @@ const PortfolioData = {
     return true;
   },
 
-  // Legacy compatibility. Existing admin code will be switched to save()
-  // in the dedicated admin migration step. This prevents a silent breaking
-  // change while the portfolio API migration is being rolled out.
+  get(key) {
+    try {
+      if (this._loaded && this._remote && Object.prototype.hasOwnProperty.call(this._remote, key)) {
+        return this._remote[key];
+      }
+
+      const raw = localStorage.getItem(DATA_KEYS[key]);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (parsed !== null && parsed !== undefined) return parsed;
+      }
+    } catch (error) {
+      console.warn(`PortfolioData.get("${key}") failed:`, error);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(DEFAULTS, key)) {
+      return DEFAULTS[key];
+    }
+
+    return null;
+  },
+
   set(key, value) {
+    // Legacy compatibility only. New persistence must use save().
     try {
       localStorage.setItem(DATA_KEYS[key], JSON.stringify(value));
       return true;
@@ -224,10 +236,22 @@ const PortfolioData = {
       return false;
     }
   },
+
+  cloneDefaults() {
+    return JSON.parse(JSON.stringify(DEFAULTS));
+  },
+
+  hasLocalStorageData() {
+    try {
+      return Object.values(DATA_KEYS).some(key => localStorage.getItem(key) !== null);
+    } catch {
+      return false;
+    }
+  },
 };
 
 /* ═══════════════════════════════════════════════
-   ADMIN AUTH — intentionally unchanged for this step
+   ADMIN AUTH — intentionally unchanged for this migration step
 ═══════════════════════════════════════════════ */
 
 const AUTH = {
@@ -248,12 +272,19 @@ const AUTH = {
   },
 
   check() {
-    try { return Boolean(sessionStorage.getItem(this.key)); }
-    catch { return false; }
+    try {
+      return Boolean(sessionStorage.getItem(this.key));
+    } catch {
+      return false;
+    }
   },
 
   logout() {
-    try { sessionStorage.removeItem(this.key); } catch { /* ignore */ }
+    try {
+      sessionStorage.removeItem(this.key);
+    } catch {
+      /* ignore */
+    }
   },
 };
 
