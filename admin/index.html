@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel — Nobin Portfolio</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../assets/css/main.css" />
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="/assets/css/main.css?v=3.8.3" />
+  <link rel="stylesheet" href="/admin/admin.css?v=3.8.3" />
 </head>
 <body class="admin-body">
 
@@ -21,13 +21,13 @@
     <div id="loginError" class="login-error hidden">❌ Invalid credentials</div>
     <div class="form-group">
       <label>Username</label>
-      <input type="text" id="loginUser" value="admin@nobin" />
+      <input type="text" id="loginUser" value="admin@nobin" autocomplete="username" />
     </div>
     <div class="form-group">
       <label>Password</label>
-      <input type="password" id="loginPass" placeholder="••••••••" />
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" />
     </div>
-    <button class="btn btn-primary btn-full" id="loginBtn">Sign In →</button>
+    <button class="btn btn-primary btn-full" id="loginBtn" type="button">Sign In →</button>
   </div>
 </div>
 
@@ -233,7 +233,7 @@
   </div>
 </div>
 
-<script src="../assets/js/data.js"></script>
-<script src="admin.js"></script>
+<script src="/assets/js/data.js?v=3.8.3"></script>
+<script src="/admin/admin.js?v=3.8.3"></script>
 </body>
 </html>
