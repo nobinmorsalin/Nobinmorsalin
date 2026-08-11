@@ -234,3 +234,31 @@ window.PortfolioData = PortfolioData;
 window.DEFAULTS = DEFAULTS;
 window.AUTH = AUTH;
 window.DATA_KEYS = DATA_KEYS;
+
+/*
+ * Public pages historically rendered immediately on DOMContentLoaded while
+ * portfolio data was still loading asynchronously. That caused the HTML
+ * fallback/local state to remain visible even though /api/portfolio already
+ * contained the latest database value.
+ *
+ * Start the authoritative load as soon as the data store is available, then
+ * refresh the existing public renderers when the API response arrives.
+ * No existing localStorage data is removed or overwritten here.
+ */
+if (typeof window !== 'undefined' && window.PortfolioData) {
+  window.__portfolioInitialLoad = window.PortfolioData.load()
+    .then(() => {
+      const refresh = () => {
+        if (typeof window.refreshPortfolio === 'function') {
+          window.refreshPortfolio();
+          return;
+        }
+        window.setTimeout(refresh, 0);
+      };
+
+      refresh();
+    })
+    .catch((error) => {
+      console.warn('Initial portfolio refresh failed:', error);
+    });
+}
