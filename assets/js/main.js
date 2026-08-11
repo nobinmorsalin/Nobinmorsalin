@@ -979,7 +979,7 @@
 
   /* =======================================================
      SMOOTH SCROLL
-  =======================================================
+  ======================================================= */
 
   function setupSmoothScroll() {
 
@@ -1031,12 +1031,8 @@
   ======================================================= */
 
   async function init() {
-
     try {
-      if (
-        window.PortfolioData &&
-        typeof window.PortfolioData.load === 'function'
-      ) {
+      if (window.PortfolioData && typeof window.PortfolioData.load === 'function') {
         await window.PortfolioData.load();
       }
     } catch (error) {
