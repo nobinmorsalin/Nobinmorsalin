@@ -75,7 +75,7 @@ const PortfolioData = {
 
   async load() {
     try {
-      const response = await fetch('/api/portfolio', {
+      const response = await fetch(`/api/portfolio?_=${Date.now()}`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         cache: 'no-store'
@@ -151,16 +151,11 @@ const PortfolioData = {
   get(key) {
     if (this._remote && Object.prototype.hasOwnProperty.call(this._remote, key)) return this._remote[key];
 
-    try {
-      const raw = localStorage.getItem(DATA_KEYS[key]);
-      if (raw !== null) {
-        const parsed = JSON.parse(raw);
-        if (parsed !== null && parsed !== undefined) return parsed;
-      }
-    } catch (error) {
-      console.warn(`PortfolioData.get("${key}") legacy cache read failed:`, error);
-    }
-
+    /*
+     * Database/API data is the primary source. Legacy localStorage is kept
+     * only as preserved data for migration/debugging and must not silently
+     * become the public source when a remote load fails.
+     */
     return DEFAULTS[key];
   },
 
