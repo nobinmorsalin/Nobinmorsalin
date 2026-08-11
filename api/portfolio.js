@@ -2,48 +2,23 @@ import { neon } from '@neondatabase/serverless';
 
 const sql = neon(process.env.DATABASE_URL);
 
-const DEFAULTS = {
-  settings: {
-    name: 'Nobin Morsalin',
-    email: 'nobinmorsalin7@gmail.com',
-    github: 'https://github.com/nobin',
-    linkedin: '',
-    profileImage: '',
-  },
-  about: {
-    title: "Hello, I'm Nobin",
-    bio1: "I'm a passionate web developer and digital craftsman from Bangladesh. I specialize in building complete digital solutions — from pixel-perfect UI/UX to robust backend systems.",
-    bio2: "My expertise spans the full stack: beautiful frontends, powerful APIs, webhook integrations, and server-to-server connections. I don't just build websites — I build systems that work.",
-  },
-  services: [],
-  clients: [],
-  projects: [],
-  skills: [],
-  workflow: [],
-};
+const ALLOWED_SECTIONS = new Set([
+  'settings',
+  'about',
+  'services',
+  'clients',
+  'projects',
+  'skills',
+  'workflow',
+]);
 
-function normalize(value) {
-  return value && typeof value === 'object' ? value : {};
-}
-
-function mergeDefaults(data) {
-  const source = normalize(data);
-  return {
-    ...DEFAULTS,
-    ...source,
-    settings: { ...DEFAULTS.settings, ...normalize(source.settings) },
-    about: { ...DEFAULTS.about, ...normalize(source.about) },
-    services: Array.isArray(source.services) ? source.services : DEFAULTS.services,
-    clients: Array.isArray(source.clients) ? source.clients : DEFAULTS.clients,
-    projects: Array.isArray(source.projects) ? source.projects : DEFAULTS.projects,
-    skills: Array.isArray(source.skills) ? source.skills : DEFAULTS.skills,
-    workflow: Array.isArray(source.workflow) ? source.workflow : DEFAULTS.workflow,
-  };
+function json(res, status, body) {
+  res.status(status).json(body);
 }
 
 export default async function handler(req, res) {
-  try {
-    if (req.method === 'GET') {
+  if (req.method === 'GET') {
+    try {
       const rows = await sql`
         SELECT id, data, version, updated_at
         FROM portfolio_content
@@ -52,52 +27,152 @@ export default async function handler(req, res) {
       `;
 
       if (!rows.length) {
-        return res.status(404).json({
+        return json(res, 404, {
           ok: false,
-          data: DEFAULTS,
-          version: 0,
-          source: 'defaults',
+          error: 'Portfolio content has not been initialized.'
         });
       }
 
-      return res.status(200).json({
+      return json(res, 200, {
         ok: true,
-        data: mergeDefaults(rows[0].data),
-        version: rows[0].version,
+        data: rows[0].data,
+        version: Number(rows[0].version),
         updated_at: rows[0].updated_at,
-        source: 'database',
+      });
+    } catch (error) {
+      console.error('Portfolio GET error:', error);
+      return json(res, 500, {
+        ok: false,
+        error: 'Failed to load portfolio content.'
       });
     }
+  }
 
-    if (req.method === 'PUT') {
-      const body = req.body && typeof req.body === 'object' ? req.body : {};
-      const incoming = normalize(body.data || body);
-      const data = mergeDefaults(incoming);
-      const version = Number(body.version || 0);
+  if (req.method === 'PUT') {
+    try {
+      const body = req.body || {};
+      const { section, data, version } = body;
+
+      if (typeof version !== 'number' || !Number.isSafeInteger(version) || version < 0) {
+        return json(res, 400, {
+          ok: false,
+          error: 'A valid portfolio version is required.'
+        });
+      }
+
+      /*
+       * First-write bootstrap.
+       *
+       * version 0 + section null means the client is initializing the
+       * singleton row with the complete portfolio object. This is used by
+       * data.js after a fresh deployment and does not touch portfolio_messages.
+       */
+      if (version === 0 && section === null) {
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+          return json(res, 400, {
+            ok: false,
+            error: 'Complete portfolio data is required for initialization.'
+          });
+        }
+
+        const rows = await sql`
+          INSERT INTO portfolio_content (id, data, version, updated_at)
+          VALUES (1, ${JSON.stringify(data)}::jsonb, 1, NOW())
+          ON CONFLICT (id) DO NOTHING
+          RETURNING id, data, version, updated_at
+        `;
+
+        if (rows.length) {
+          return json(res, 200, {
+            ok: true,
+            data: rows[0].data,
+            version: Number(rows[0].version),
+            updated_at: rows[0].updated_at,
+            initialized: true,
+          });
+        }
+
+        const current = await sql`
+          SELECT data, version, updated_at
+          FROM portfolio_content
+          WHERE id = 1
+          LIMIT 1
+        `;
+
+        if (!current.length) {
+          return json(res, 500, {
+            ok: false,
+            error: 'Portfolio initialization could not be completed.'
+          });
+        }
+
+        return json(res, 409, {
+          ok: false,
+          error: 'Portfolio content was initialized by another request. Reload before saving.',
+          data: current[0].data,
+          version: Number(current[0].version),
+          updated_at: current[0].updated_at,
+        });
+      }
+
+      if (!ALLOWED_SECTIONS.has(section)) {
+        return json(res, 400, {
+          ok: false,
+          error: 'Invalid portfolio section.'
+        });
+      }
 
       const rows = await sql`
-        INSERT INTO portfolio_content (id, data, version, updated_at)
-        VALUES (1, ${JSON.stringify(data)}::jsonb, GREATEST(${version}, 1), NOW())
-        ON CONFLICT (id) DO UPDATE
-        SET data = EXCLUDED.data,
-            version = GREATEST(portfolio_content.version + 1, EXCLUDED.version),
-            updated_at = NOW()
+        UPDATE portfolio_content
+        SET
+          data = jsonb_set(data, ARRAY[${section}], ${JSON.stringify(data)}::jsonb, true),
+          version = version + 1,
+          updated_at = NOW()
+        WHERE id = 1
+          AND version = ${version}
         RETURNING id, data, version, updated_at
       `;
 
-      return res.status(200).json({
+      if (!rows.length) {
+        const current = await sql`
+          SELECT version
+          FROM portfolio_content
+          WHERE id = 1
+          LIMIT 1
+        `;
+
+        if (!current.length) {
+          return json(res, 404, {
+            ok: false,
+            error: 'Portfolio content has not been initialized.'
+          });
+        }
+
+        return json(res, 409, {
+          ok: false,
+          error: 'Portfolio content changed since it was loaded. Reload before saving.',
+          version: Number(current[0].version),
+        });
+      }
+
+      return json(res, 200, {
         ok: true,
         data: rows[0].data,
-        version: rows[0].version,
+        version: Number(rows[0].version),
         updated_at: rows[0].updated_at,
-        source: 'database',
+      });
+    } catch (error) {
+      console.error('Portfolio PUT error:', error);
+      return json(res, 500, {
+        ok: false,
+        error: 'Failed to save portfolio content.'
       });
     }
-
-    res.setHeader('Allow', 'GET, PUT');
-    return res.status(405).json({ ok: false, error: 'Method not allowed' });
-  } catch (error) {
-    console.error('Portfolio API error:', error);
-    return res.status(500).json({ ok: false, error: 'Portfolio API failed' });
   }
+
+  res.setHeader('Allow', 'GET, PUT');
+  return json(res, 405, {
+    ok: false,
+    error: 'Method not allowed.'
+  });
 }
