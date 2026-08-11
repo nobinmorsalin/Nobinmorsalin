@@ -9,8 +9,10 @@
     "start": "vercel dev"
   },
   "dependencies": {
-    "nodemailer": "^6.9.14",
-    "@neondatabase/serverless": "^1.0.1"
+    "@neondatabase/serverless": "^1.0.1",
+    "@vercel/blob": "^2.0.0",
+    "formidable": "^3.5.4",
+    "nodemailer": "^6.9.14"
   },
   "engines": {
     "node": "24.x"
