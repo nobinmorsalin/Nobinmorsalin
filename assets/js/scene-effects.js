@@ -7,7 +7,7 @@
     s.textContent=`
       #scene3d{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;isolation:isolate;--mx:0px;--my:0px;background:radial-gradient(circle at 50% 8%,rgba(0,245,160,.055),transparent 32%),linear-gradient(180deg,rgba(3,7,10,.72),rgba(3,7,10,.97))}
       .nav,.hero,.section,.footer{position:relative;z-index:1}
-      .live-chat{position:fixed!important;right:28px;bottom:28px;z-index:200!important}
+      .live-chat{position:fixed!important;right:28px;bottom:28px;z-index:10000!important}
       .scene-grid{position:absolute;left:-20%;width:140%;height:70%;bottom:-20%;transform:perspective(700px) rotateX(62deg) translate3d(var(--mx),var(--my),0);transform-origin:center bottom;background-image:linear-gradient(rgba(0,245,160,.085) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,160,.085) 1px,transparent 1px);background-size:58px 58px;mask-image:linear-gradient(to top,rgba(0,0,0,.95),transparent 88%);animation:scene-grid-drift 18s linear infinite}
       .scene-grid-b{bottom:-34%;opacity:.35;filter:blur(.4px);background-size:92px 92px;animation-duration:28s}
       .scene-orb{position:absolute;border-radius:50%;filter:blur(38px);opacity:.28;transform:translate3d(var(--mx),var(--my),0);will-change:transform}
@@ -21,7 +21,7 @@
       @keyframes scene-orb-a{50%{transform:translate3d(calc(var(--mx) + 28px),calc(var(--my) - 22px),0)}}
       @keyframes scene-orb-b{50%{transform:translate3d(calc(var(--mx) - 34px),calc(var(--my) + 26px),0)}}
       @keyframes scene-orb-c{50%{transform:translate3d(calc(var(--mx) + 18px),calc(var(--my) + 20px),0)}}
-      @media(max-width:680px){#scene3d{background:radial-gradient(circle at 70% 12%,rgba(0,245,160,.045),transparent 34%),#05090c}.scene-grid{left:-70%;width:240%;height:62%;bottom:-14%;background-size:42px 42px;opacity:.65}.scene-grid-b{background-size:74px 74px;opacity:.22}.scene-orb{filter:blur(48px);opacity:.2}.scene-orb-a{width:250px;height:250px;left:-100px;top:25%}.scene-orb-b{width:300px;height:300px;right:-120px;top:8%}.scene-orb-c{width:220px;height:220px;left:30%;bottom:6%}.scene-stars{opacity:.20}.live-chat{right:16px;bottom:16px}}
+      @media(max-width:680px){#scene3d{background:radial-gradient(circle at 70% 12%,rgba(0,245,160,.045),transparent 34%),#05090c}.scene-grid{left:-70%;width:240%;height:62%;bottom:-14%;background-size:42px 42px;opacity:.65}.scene-grid-b{background-size:74px 74px;opacity:.22}.scene-orb{filter:blur(48px);opacity:.2}.scene-orb-a{width:250px;height:250px;left:-100px;top:25%}.scene-orb-b{width:300px;height:300px;right:-120px;top:8%}.scene-orb-c{width:220px;height:220px;left:30%;bottom:6%}.scene-stars{opacity:.20}.live-chat{right:16px!important;bottom:16px!important}}
       @media(prefers-reduced-motion:reduce){#scene3d .scene-grid,#scene3d .scene-stars,#scene3d .scene-orb{animation:none}#scene3d{--mx:0px;--my:0px}}
     `;
     document.head.appendChild(s);
