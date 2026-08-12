@@ -1,4 +1,4 @@
-/* NOBIN PORTFOLIO — 3D ambient background + subtle interaction sounds */
+/* NOBIN PORTFOLIO — 3D ambient background + subtle interaction sounds + navigation compatibility */
 (function(){
   'use strict';
   function injectStyles(){
@@ -16,6 +16,8 @@
       .scene-orb-c{width:340px;height:340px;left:38%;bottom:2%;background:radial-gradient(circle,rgba(124,92,255,.14),transparent 70%);animation:scene-orb-c 14s ease-in-out infinite}
       .scene-stars{position:absolute;inset:0;opacity:.28;background-image:radial-gradient(circle at 12% 22%,rgba(255,255,255,.9) 0 1px,transparent 1.5px),radial-gradient(circle at 74% 18%,rgba(0,245,160,.9) 0 1px,transparent 1.5px),radial-gradient(circle at 47% 68%,rgba(0,212,255,.75) 0 1px,transparent 1.5px),radial-gradient(circle at 88% 76%,rgba(255,255,255,.7) 0 1px,transparent 1.5px);background-size:240px 240px,300px 300px,420px 420px,520px 520px;animation:scene-stars-drift 22s linear infinite}
       .hero .container{isolation:isolate}.hero-visual,.code-card{position:relative;z-index:2}.code-card{box-shadow:0 24px 70px rgba(0,0,0,.38),0 0 60px rgba(0,245,160,.06),inset 0 1px 0 rgba(255,255,255,.06)}
+      /* main.js uses .active while the responsive stylesheet uses .open; support both */
+      @media(max-width:680px){.nav-links.active{display:flex;flex-direction:column;position:fixed;inset:0;background:rgba(8,12,16,.97);backdrop-filter:blur(20px);z-index:99;align-items:center;justify-content:center;gap:20px;padding:40px}.nav-links.active a{font-size:1.25rem}.nav-toggle.active{position:relative;z-index:101}.nav-toggle.active span:nth-child(1){transform:translateY(7px) rotate(45deg)}.nav-toggle.active span:nth-child(2){opacity:0}.nav-toggle.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}}
       @keyframes scene-grid-drift{from{background-position:0 0,0 0}to{background-position:0 58px,58px 0}}
       @keyframes scene-stars-drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-40px,0)}}
       @keyframes scene-orb-a{50%{transform:translate3d(calc(var(--mx) + 28px),calc(var(--my) - 22px),0)}}
@@ -38,6 +40,18 @@
       window.addEventListener('pointermove',function(e){tx=(e.clientX/window.innerWidth-.5)*10;ty=(e.clientY/window.innerHeight-.5)*8},{passive:true});
       function frame(){x+=(tx-x)*.045;y+=(ty-y)*.045;scene.style.setProperty('--mx',x.toFixed(2)+'px');scene.style.setProperty('--my',y.toFixed(2)+'px');requestAnimationFrame(frame)}
       requestAnimationFrame(frame);
+    }
+    /* Navigation compatibility: main.js toggles .active, while the original mobile CSS expects .open. */
+    var toggle=document.getElementById('navToggle');
+    var links=document.getElementById('navLinks');
+    if(toggle&&links){
+      toggle.addEventListener('click',function(){
+        links.classList.toggle('open',links.classList.contains('active'));
+      });
+      links.addEventListener('click',function(e){
+        if(e.target.closest('a')){links.classList.remove('open');}
+      });
+      window.addEventListener('resize',function(){if(window.innerWidth>680)links.classList.remove('open');},{passive:true});
     }
     var ctx=null,master=null;
     function sound(type){try{var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!ctx){ctx=new AC();master=ctx.createGain();master.gain.value=.035;master.connect(ctx.destination)}if(ctx.state==='suspended')ctx.resume();var o=ctx.createOscillator(),g=ctx.createGain(),now=ctx.currentTime;o.type=type==='nav'?'triangle':'sine';o.frequency.setValueAtTime(type==='nav'?420:560,now);o.frequency.exponentialRampToValueAtTime(type==='nav'?260:780,now+.09);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(1,now+.008);g.gain.exponentialRampToValueAtTime(.0001,now+.11);o.connect(g);g.connect(master);o.start(now);o.stop(now+.12)}catch(_){}}
