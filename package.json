@@ -12,7 +12,8 @@
     "@neondatabase/serverless": "^1.0.1",
     "@vercel/blob": "^2.0.0",
     "formidable": "^3.5.4",
-    "nodemailer": "^6.9.14"
+    "nodemailer": "^6.9.14",
+    "web-push": "^3.6.7"
   },
   "engines": {
     "node": "24.x"
