@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel — Nobin Portfolio</title>
+  <link rel="manifest" href="/admin/manifest.webmanifest" />
+  <meta name="theme-color" content="#080c10" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/css/main.css?v=3.8.3" />
   <link rel="stylesheet" href="/admin/admin.css?v=3.8.3" />
@@ -20,32 +22,20 @@
       body.admin-menu-locked { overflow:hidden; }
     }
     @media (min-width:769px) { .admin-mobile-topbar{display:none !important;} .sidebar-backdrop{display:none !important;} }
+    #enablePushBtn{margin-left:auto}.admin-topbar .panel-header{display:flex;align-items:center}
   </style>
 </head>
 <body class="admin-body">
 <div class="login-screen" id="loginScreen">
-  <div class="login-card">
-    <div class="nav-logo" style="margin-bottom:32px;font-size:1.5rem"><span class="logo-bracket">[</span>admin<span class="logo-bracket">]</span></div>
-    <h2 class="login-title">Welcome back</h2><p class="login-sub">Sign in to manage your portfolio</p>
-    <div id="loginError" class="login-error hidden">❌ Invalid credentials</div>
-    <div class="form-group"><label>Username</label><input type="text" id="loginUser" value="admin@nobin" autocomplete="username" /></div>
-    <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" /></div>
-    <button class="btn btn-primary btn-full" id="loginBtn" type="button">Sign In →</button>
-  </div>
+  <div class="login-card"><div class="nav-logo" style="margin-bottom:32px;font-size:1.5rem"><span class="logo-bracket">[</span>admin<span class="logo-bracket">]</span></div><h2 class="login-title">Welcome back</h2><p class="login-sub">Sign in to manage your portfolio</p><div id="loginError" class="login-error hidden">❌ Invalid credentials</div><div class="form-group"><label>Username</label><input type="text" id="loginUser" value="admin@nobin" autocomplete="username" /></div><div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" /></div><button class="btn btn-primary btn-full" id="loginBtn" type="button">Sign In →</button></div>
 </div>
 <div class="admin-wrap hidden" id="adminWrap">
   <div class="admin-mobile-topbar"><button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open admin menu" aria-expanded="false">☰</button><div class="mobile-brand"><strong>Nobin</strong> Morsalin <span>ADMIN</span></div></div>
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-  <aside class="sidebar">
-    <div class="sidebar-logo"><div class="sidebar-brand"><span class="logo-bracket">[</span><span>Nobin</span> <span>Morsalin</span><span class="logo-bracket">]</span><span class="sidebar-role">ADMIN</span></div><button class="sidebar-close" id="sidebarClose" type="button" aria-label="Close admin menu">✕</button></div>
-    <nav class="sidebar-nav">
-      <button class="sb-btn active" data-panel="overview">📊 Overview</button><button class="sb-btn" data-panel="services">🛠️ Services</button><button class="sb-btn" data-panel="projects">🖼️ Projects</button><button class="sb-btn" data-panel="clients">🤝 Clients</button><button class="sb-btn" data-panel="skills">⚡ Skills</button><button class="sb-btn" data-panel="workflow">📋 Workflow</button><button class="sb-btn" data-panel="messages">📨 Messages</button><button class="sb-btn" data-panel="settings">⚙️ Settings</button>
-    </nav>
-    <div class="sidebar-footer"><a href="/" target="_blank" class="sb-link">↗ View Site</a><button class="sb-link" id="logoutBtn">⇠ Logout</button></div>
-  </aside>
+  <aside class="sidebar"><div class="sidebar-logo"><div class="sidebar-brand"><span class="logo-bracket">[</span><span>Nobin</span> <span>Morsalin</span><span class="logo-bracket">]</span><span class="sidebar-role">ADMIN</span></div><button class="sidebar-close" id="sidebarClose" type="button" aria-label="Close admin menu">✕</button></div><nav class="sidebar-nav"><button class="sb-btn active" data-panel="overview">📊 Overview</button><button class="sb-btn" data-panel="services">🛠️ Services</button><button class="sb-btn" data-panel="projects">🖼️ Projects</button><button class="sb-btn" data-panel="clients">🤝 Clients</button><button class="sb-btn" data-panel="skills">⚡ Skills</button><button class="sb-btn" data-panel="workflow">📋 Workflow</button><button class="sb-btn" data-panel="messages">📨 Messages</button><button class="sb-btn" data-panel="settings">⚙️ Settings</button></nav><div class="sidebar-footer"><a href="/" target="_blank" class="sb-link">↗ View Site</a><button class="sb-link" id="logoutBtn">⇠ Logout</button></div></aside>
   <main class="admin-main">
     <header class="admin-topbar"><div><div class="admin-topbar-title">Nobin Morsalin</div><div class="admin-topbar-sub">Portfolio Control Center</div></div><div class="admin-user-chip"><span class="admin-user-dot"></span><span>Administrator</span></div></header>
-    <div class="panel active" id="panel-overview"><div class="panel-header"><h1 class="panel-title">Dashboard</h1><p class="panel-sub">Welcome back, Nobin!</p></div><div class="stats-row" id="overviewStats"></div><div class="recent-messages"><h3 class="section-h3">Recent Messages</h3><div id="recentMessages"></div></div></div>
+    <div class="panel active" id="panel-overview"><div class="panel-header"><div><h1 class="panel-title">Dashboard</h1><p class="panel-sub">Welcome back, Nobin!</p></div></div><div class="stats-row" id="overviewStats"></div><div class="recent-messages"><h3 class="section-h3">Recent Messages</h3><div id="recentMessages"></div></div></div>
     <div class="panel hidden" id="panel-services"><div class="panel-header"><h1 class="panel-title">Services</h1><button class="btn btn-primary" id="addServiceBtn">+ Add Service</button></div><div class="item-grid" id="servicesAdmin"></div></div>
     <div class="panel hidden" id="panel-projects"><div class="panel-header"><h1 class="panel-title">Projects</h1><button class="btn btn-primary" id="addProjectBtn">+ Add Project</button></div><div class="item-grid" id="projectsAdmin"></div></div>
     <div class="panel hidden" id="panel-clients"><div class="panel-header"><div><h1 class="panel-title">Clients</h1><p class="panel-sub">Manage client logos, names, services and visibility.</p></div><button class="btn btn-primary" id="addClientBtn">+ Add Client</button></div><div class="item-grid" id="clientsAdmin"></div></div>
@@ -60,6 +50,7 @@
 <script src="/admin/admin.js?v=3.8.3"></script>
 <script src="/admin/services-enhanced.js?v=1.0.0"></script>
 <script src="/admin/clients.js?v=1.0.1"></script>
+<script src="/admin/push-notifications.js?v=1.0.0"></script>
 <script>
 (() => {
   const wrap=document.getElementById('adminWrap'),menu=document.getElementById('mobileMenuBtn'),close=document.getElementById('sidebarClose'),backdrop=document.getElementById('sidebarBackdrop'),navButtons=document.querySelectorAll('.sidebar .sb-btn');
