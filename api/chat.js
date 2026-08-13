@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════
    /api/chat
    Visitor Live Chat
-   Neon Database + Auto Reply
+   Neon Database + Auto Reply + Admin Push
    ═══════════════════════════════════════════════ */
 
 const { neon } = require('@neondatabase/serverless');
@@ -46,86 +46,68 @@ const AUTO_REPLIES = [
 ];
 
 function getAutoReply(message) {
-  const found = AUTO_REPLIES.find(
-    item => item.match.test(message)
-  );
-
+  const found = AUTO_REPLIES.find(item => item.match.test(message));
   return found
     ? found.reply
     : "Thanks for your message! 👋 I've received it and will get back to you soon.";
 }
 
-module.exports = async function handler(req, res) {
+async function notifyAdmin(message, conversationId) {
+  try {
+    const host = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : null;
 
-  res.setHeader(
-    'Access-Control-Allow-Origin',
-    '*'
-  );
+    if (!host) return;
 
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'POST, OPTIONS'
-  );
-
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type'
-  );
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    await fetch(`${host}/api/push-send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: '💬 New Live Chat Message',
+        body: message.length > 120 ? `${message.slice(0, 117)}...` : message,
+        url: `/admin/#messages?conversation=${encodeURIComponent(conversationId)}`,
+        icon: '/favicon.svg',
+        badge: '/favicon.svg',
+        tag: `live-chat-${conversationId}`
+      })
+    });
+  } catch (error) {
+    // Push failure must never break the live-chat message flow.
+    console.error('LIVE CHAT PUSH ERROR:', error);
   }
+}
+
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      ok: false,
-      error: 'Method not allowed'
-    });
+    return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
 
   try {
-
     if (!process.env.DATABASE_URL) {
-      return res.status(500).json({
-        ok: false,
-        error: 'DATABASE_URL is not configured.'
-      });
+      return res.status(500).json({ ok: false, error: 'DATABASE_URL is not configured.' });
     }
 
-    const sql = neon(
-      process.env.DATABASE_URL
-    );
-
+    const sql = neon(process.env.DATABASE_URL);
     const body = req.body || {};
 
-    const message =
-      typeof body.message === 'string'
-        ? body.message.trim()
-        : '';
-
-    const conversationId =
-      typeof body.conversationId === 'string'
-        ? body.conversationId.trim()
-        : '';
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
+    const conversationId = typeof body.conversationId === 'string' ? body.conversationId.trim() : '';
 
     if (!message) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Message is required.'
-      });
+      return res.status(400).json({ ok: false, error: 'Message is required.' });
     }
 
     if (!conversationId) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Conversation ID is required.'
-      });
+      return res.status(400).json({ ok: false, error: 'Conversation ID is required.' });
     }
 
-    /*
-     * Make sure the existing table is available.
-     * Existing contact messages are NOT deleted.
-     */
     await sql`
       CREATE TABLE IF NOT EXISTS portfolio_messages (
         id BIGSERIAL PRIMARY KEY,
@@ -138,9 +120,6 @@ module.exports = async function handler(req, res) {
       )
     `;
 
-    /*
-     * Add live-chat columns to the existing table.
-     */
     await sql`
       ALTER TABLE portfolio_messages
       ADD COLUMN IF NOT EXISTS conversation_id TEXT
@@ -151,66 +130,25 @@ module.exports = async function handler(req, res) {
       ADD COLUMN IF NOT EXISTS sender TEXT
     `;
 
-    /*
-     * Save visitor message.
-     */
     const visitorMessage = await sql`
       INSERT INTO portfolio_messages
-        (
-          name,
-          email,
-          subject,
-          message,
-          is_read,
-          conversation_id,
-          sender
-        )
+        (name, email, subject, message, is_read, conversation_id, sender)
       VALUES
-        (
-          'Live Chat Visitor',
-          'livechat@visitor.local',
-          'Live Chat',
-          ${message},
-          FALSE,
-          ${conversationId},
-          'visitor'
-        )
-      RETURNING
-        id,
-        created_at
+        ('Live Chat Visitor', 'livechat@visitor.local', 'Live Chat', ${message}, FALSE, ${conversationId}, 'visitor')
+      RETURNING id, created_at
     `;
 
-    /*
-     * Automatic reply.
-     * Saved into the same conversation so the
-     * visitor can see it again after refresh.
-     */
+    // Notify the subscribed admin device after the visitor message is saved.
+    await notifyAdmin(message, conversationId);
+
     const reply = getAutoReply(message);
 
     const botMessage = await sql`
       INSERT INTO portfolio_messages
-        (
-          name,
-          email,
-          subject,
-          message,
-          is_read,
-          conversation_id,
-          sender
-        )
+        (name, email, subject, message, is_read, conversation_id, sender)
       VALUES
-        (
-          'Nobin Morsalin',
-          'admin@portfolio.local',
-          'Live Chat Reply',
-          ${reply},
-          TRUE,
-          ${conversationId},
-          'bot'
-        )
-      RETURNING
-        id,
-        created_at
+        ('Nobin Morsalin', 'admin@portfolio.local', 'Live Chat Reply', ${reply}, TRUE, ${conversationId}, 'bot')
+      RETURNING id, created_at
     `;
 
     return res.status(200).json({
@@ -220,17 +158,8 @@ module.exports = async function handler(req, res) {
       replyId: botMessage[0]?.id || null,
       reply
     });
-
   } catch (error) {
-
-    console.error(
-      'LIVE CHAT ERROR:',
-      error
-    );
-
-    return res.status(500).json({
-      ok: false,
-      error: 'Unable to save chat message.'
-    });
+    console.error('LIVE CHAT ERROR:', error);
+    return res.status(500).json({ ok: false, error: 'Unable to save chat message.' });
   }
 };
