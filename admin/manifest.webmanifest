@@ -1,13 +1,14 @@
 {
   "name": "Nobin Morsalin Admin",
-  "short_name": "Admin",
+  "short_name": "Nobin Admin",
   "start_url": "/admin/",
   "scope": "/admin/",
   "display": "standalone",
   "background_color": "#05090c",
   "theme_color": "#00f5a0",
-  "description": "Nobin Morsalin portfolio admin dashboard",
+  "description": "Nobin Morsalin portfolio admin dashboard and message center",
   "icons": [
-    {"src":"/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+    {"src":"/admin/app-icon.svg","sizes":"192x192","type":"image/svg+xml","purpose":"any maskable"},
+    {"src":"/admin/app-icon.svg","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}
   ]
 }
