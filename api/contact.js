@@ -38,7 +38,6 @@ module.exports = async function handler(req, res) {
 
     console.log('Message saved to database.', inserted[0]?.id);
 
-    // Push notification to subscribed admin devices. Notification failure never blocks message delivery.
     try {
       const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT = 'mailto:nobinmorsalin7@gmail.com' } = process.env;
       if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
@@ -58,7 +57,7 @@ module.exports = async function handler(req, res) {
         const payload = JSON.stringify({
           title: '🔔 New Portfolio Message',
           body: `${name}: ${subject}`,
-          url: '/admin/',
+          url: '/admin/#messages',
           tag: 'portfolio-message'
         });
         for (const row of subscriptions) {
