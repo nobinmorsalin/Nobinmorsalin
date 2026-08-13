@@ -1,0 +1,1 @@
+Admin PWA notification files have been added on the feature branch. The final wiring into the existing admin page and message-creation endpoint must be completed together with the project's current dependency setup before merging to main.

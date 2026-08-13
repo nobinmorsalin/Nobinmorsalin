@@ -1,0 +1,1 @@
+Admin push notifications are configured on this feature branch. Enable notifications once on the same admin origin to create the browser push subscription. The contact API sends new-message notifications to stored subscriptions.

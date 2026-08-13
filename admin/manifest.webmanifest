@@ -1,0 +1,13 @@
+{
+  "name": "Nobin Morsalin Admin",
+  "short_name": "Admin",
+  "start_url": "/admin/",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#05090c",
+  "theme_color": "#00f5a0",
+  "description": "Nobin Morsalin portfolio admin dashboard",
+  "icons": [
+    {"src":"/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
