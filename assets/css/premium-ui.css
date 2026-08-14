@@ -1,14 +1,16 @@
-/* NOBIN MORSALIN — PREMIUM UI SYSTEM v1.0
-   Additive: keeps existing data/render logic intact. */
+/* NOBIN MORSALIN — PREMIUM UI SYSTEM v1.1
+   Additive only: preserves existing render, chat, menu and API logic. */
 :root{--ease-premium:cubic-bezier(.22,1,.36,1);--surface-glass:rgba(13,17,23,.72);--line-soft:rgba(255,255,255,.08);--accent-soft:rgba(0,245,160,.12)}
 html{scroll-padding-top:88px}
-body{background:radial-gradient(circle at 78% 8%,rgba(0,245,160,.035),transparent 28%),radial-gradient(circle at 8% 52%,rgba(0,212,255,.025),transparent 25%),var(--bg);}
+body{background:radial-gradient(circle at 78% 8%,rgba(0,245,160,.035),transparent 28%),radial-gradient(circle at 8% 52%,rgba(0,212,255,.025),transparent 25%),var(--bg)}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:80px 80px;mask-image:linear-gradient(to bottom,black,transparent 88%);opacity:.45}
 .nav{transition:background .35s ease,box-shadow .35s ease,padding .35s var(--ease-premium)}
 .nav.scrolled{box-shadow:0 10px 40px rgba(0,0,0,.2)}
 .nav-links a{position:relative}
 .nav-links a:not(.nav-cta)::after{content:"";position:absolute;left:14px;right:14px;bottom:4px;height:1px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease-premium)}
-.nav-links a:not(.nav-cta):hover::after{transform:scaleX(1)}
+.nav-links a:not(.nav-cta):hover::after,.nav-links a.is-current:not(.nav-cta)::after{transform:scaleX(1)}
+.nav-links a.is-current{color:var(--text)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid rgba(0,245,160,.65);outline-offset:3px}
 .hero{isolation:isolate}
 .hero-content{animation:premiumHeroIn .8s var(--ease-premium) both}
 .hero-visual{animation:premiumHeroVisual 1s .08s var(--ease-premium) both}
@@ -32,20 +34,20 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
 .skill-tag{transition:transform .25s var(--ease-premium),background .25s ease,border-color .25s ease}
 .skill-tag:hover{transform:translateY(-2px);background:rgba(0,245,160,.12);border-color:rgba(0,245,160,.35)}
 .service-card,.project-card,.workflow-step,.contact-form-wrap{transition:transform .4s var(--ease-premium),border-color .3s ease,box-shadow .4s ease,background .3s ease}
+.service-card,.project-card,.workflow-step{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(22,27,34,.86),rgba(10,14,19,.92))}
+.service-card::before,.project-card::before,.workflow-step::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--mx,50%) var(--my,0%),rgba(0,245,160,.10),transparent 34%);opacity:0;transition:opacity .35s ease;pointer-events:none}
+.service-card:hover::before,.project-card:hover::before,.workflow-step:hover::before{opacity:1}
 .service-card:hover,.project-card:hover,.workflow-step:hover{transform:translateY(-7px);box-shadow:0 24px 55px rgba(0,0,0,.3),0 0 0 1px rgba(0,245,160,.035)}
-.service-card,.project-card,.workflow-step{background:linear-gradient(145deg,rgba(22,27,34,.86),rgba(10,14,19,.92))}
 .project-image{overflow:hidden}
 .project-image img{transition:transform .7s var(--ease-premium),filter .7s ease}
 .project-card:hover .project-image img{transform:scale(1.045);filter:saturate(1.06)}
 .project-links a{transition:transform .25s ease,color .25s ease}
 .project-links a:hover{transform:translateX(3px);color:var(--accent)}
-.workflow-step{position:relative;overflow:hidden}
 .workflow-step::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent-2));transform:scaleX(0);transform-origin:left;transition:transform .45s var(--ease-premium)}
 .workflow-step:hover::after{transform:scaleX(1)}
 .contact-form input,.contact-form textarea{transition:border-color .25s ease,box-shadow .25s ease,background .25s ease}
 .contact-form input:focus,.contact-form textarea:focus{border-color:rgba(0,245,160,.5);box-shadow:0 0 0 4px rgba(0,245,160,.07);outline:none;background:rgba(255,255,255,.035)}
 .footer{border-top:1px solid var(--border)}
-/* Scroll reveal: JS adds .is-visible */
 .premium-reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .8s var(--ease-premium)}
 .premium-reveal.is-visible{opacity:1;transform:none}
 .premium-reveal[data-reveal-delay="1"]{transition-delay:.08s}.premium-reveal[data-reveal-delay="2"]{transition-delay:.16s}.premium-reveal[data-reveal-delay="3"]{transition-delay:.24s}
@@ -59,6 +61,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
   html{scroll-padding-top:76px}.section{padding:72px 0}.section::before{width:calc(100% - 32px)}.container{padding-inline:16px}.section-title{font-size:clamp(1.85rem,8vw,2.55rem)}.section-sub{font-size:.94rem;margin-bottom:34px}
   .hero-content{animation-duration:.65s}.hero-visual{animation-duration:.7s}.code-card:hover{transform:none}.btn:hover{transform:none}
   .about-grid{gap:48px}.about-badge{right:4px;bottom:-14px;padding:12px 14px}.service-card,.project-card,.workflow-step{border-radius:18px}.service-card:hover,.project-card:hover,.workflow-step:hover{transform:none}
-  .premium-backtop{right:14px;bottom:76px;width:42px;height:42px}.premium-section-marker{display:none}
+  .premium-backtop{right:14px;bottom:calc(72px + env(safe-area-inset-bottom));width:42px;height:42px}.premium-section-marker{display:none}
+  .section-label{font-size:.64rem}.section-label::after{width:28px}.contact-form-wrap{border-radius:20px}
 }
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}.premium-reveal,.premium-stagger>*{opacity:1!important;transform:none!important;transition:none!important}.hero-content,.hero-visual{animation:none!important}.code-card::after,.btn::after{display:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}.premium-reveal,.premium-stagger>*{opacity:1!important;transform:none!important;transition:none!important}.hero-content,.hero-visual{animation:none!important}.code-card::after,.btn::after{display:none}.service-card::before,.project-card::before,.workflow-step::before{display:none}}
