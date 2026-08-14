@@ -16,8 +16,17 @@
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/animations.css" />
   <link rel="stylesheet" href="assets/css/portfolio-enhancements.css" />
+  <link rel="stylesheet" href="assets/css/reload-animation.css?v=1.0.0" />
 </head>
 <body>
+  <div id="pageLoader" aria-hidden="true">
+    <div class="page-loader-glow"></div>
+    <div class="page-loader-inner">
+      <div class="page-loader-brand"><span class="bracket">[</span>Nobin <span class="last">Morsalin</span><span class="bracket">]</span></div>
+      <div class="page-loader-status">Loading experience</div>
+      <div class="page-loader-progress"></div>
+    </div>
+  </div>
   <nav class="nav" id="nav"><div class="nav-inner"><a href="#hero" class="nav-logo" aria-label="Nobin Morsalin Home"><span class="logo-bracket">[</span><span class="logo-name">Nobin</span><span class="logo-lastname"> Morsalin</span><span class="logo-bracket">]</span></a><ul class="nav-links" id="navLinks"><li><a href="#about">About</a></li><li><a href="#services">Services</a></li><li><a href="#projects">Projects</a></li><li><a href="#clients">Clients</a></li><li><a href="#workflow">Process</a></li><li><a href="#contact" class="nav-cta">Let's Talk</a></li></ul><button class="nav-toggle" id="navToggle" type="button" aria-label="Open navigation menu" aria-expanded="false"><span></span><span></span><span></span></button></div></nav>
   <section class="hero" id="hero"><div class="hero-bg"><div class="grid-overlay"></div><div class="orb orb-1"></div><div class="orb orb-2"></div></div><div class="container"><div class="hero-content"><div class="hero-eyebrow"><span class="dot pulse"></span>Available for projects</div><h1 class="hero-title">I Build Digital<br /><span class="title-accent">Experiences</span><br />That Work.</h1><p class="hero-sub">Web Development · UI/UX Design · API Integration<br />Webhooks · Automation · Server Architecture · End-to-End Systems</p><div class="hero-actions"><a href="#projects" class="btn btn-primary">View My Work</a><a href="#contact" class="btn btn-ghost">Start a Project →</a></div><div class="hero-stats"><div class="stat" id="stat-projects"><span class="stat-num">0</span><span class="stat-label">Projects</span></div><div class="stat-divider"></div><div class="stat" id="stat-services"><span class="stat-num">0</span><span class="stat-label">Services</span></div><div class="stat-divider"></div><div class="stat" id="stat-clients"><span class="stat-num">0</span><span class="stat-label">Clients</span></div></div></div><div class="hero-visual"><div class="code-card"><div class="code-header"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span><span class="code-filename">nobin.config.js</span></div><pre class="code-body"><code><span class="c-keyword">const</span> <span class="c-var">developer</span> = {
   <span class="c-key">name</span>: <span class="c-str">"Nobin Morsalin"</span>,
@@ -40,5 +49,6 @@
   <script src="assets/js/portfolio-details.js?v=2.0.0"></script>
   <script src="assets/js/scene-effects.js?v=1.0.0"></script>
   <script src="assets/js/chat.js"></script>
+  <script src="assets/js/reload-animation.js?v=1.0.0"></script>
 </body>
 </html>
