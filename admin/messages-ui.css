@@ -1,0 +1,26 @@
+/* Premium Live Messages UI */
+#messagesAdmin{display:grid;gap:16px;max-width:1100px}
+#messagesAdmin .msg-admin-card{position:relative;margin:0;padding:0;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.09);border-radius:18px;box-shadow:0 12px 35px rgba(0,0,0,.16);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+#messagesAdmin .msg-admin-card:hover{transform:translateY(-2px);border-color:rgba(0,245,160,.28);box-shadow:0 18px 42px rgba(0,0,0,.22)}
+#messagesAdmin .msg-admin-card.msg-unread{border-left:3px solid var(--accent);box-shadow:0 0 0 1px rgba(0,245,160,.06),0 15px 40px rgba(0,0,0,.2)}
+#messagesAdmin .msg-admin-header{padding:17px 20px;margin:0;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.12);gap:14px}
+#messagesAdmin .msg-admin-header>div:first-child{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+#messagesAdmin .msg-admin-from{font-family:var(--font-head);font-weight:800;color:var(--text);font-size:.96rem}
+#messagesAdmin .msg-admin-email{margin:0!important;font-family:var(--font-mono);font-size:.72rem;color:var(--accent);text-decoration:none;opacity:.85;overflow-wrap:anywhere}
+#messagesAdmin .msg-admin-email:hover{text-decoration:underline;opacity:1}
+#messagesAdmin .msg-admin-time{font-size:.68rem;color:var(--text-dim);white-space:nowrap}
+#messagesAdmin .msg-admin-subject{padding:16px 20px 5px;margin:0;color:var(--text);font-size:.8rem;font-weight:600}
+#messagesAdmin .msg-admin-body{padding:7px 20px 18px;color:var(--text-muted);font-size:.9rem;line-height:1.75;white-space:normal;overflow-wrap:anywhere}
+#messagesAdmin .admin-reply-box{margin:0!important;padding:14px 20px 18px!important;border-top:1px solid rgba(255,255,255,.07)!important;background:rgba(0,0,0,.10)}
+#messagesAdmin .admin-reply-box textarea{min-height:82px;width:100%;background:var(--bg)!important;border:1px solid var(--border)!important;border-radius:12px!important;padding:12px 14px!important;line-height:1.5;outline:none;transition:border-color .2s,box-shadow .2s}
+#messagesAdmin .admin-reply-box textarea:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(0,245,160,.08)}
+#messagesAdmin .admin-reply-box>div:nth-child(2){margin-top:9px!important;display:flex;justify-content:flex-end}
+#messagesAdmin .admin-reply-box .action-btn{flex:0 0 auto;min-width:105px;padding:9px 15px;border-radius:10px;background:rgba(0,245,160,.09);border-color:rgba(0,245,160,.22);color:var(--accent);font-weight:700}
+#messagesAdmin .admin-reply-box .action-btn:hover{background:rgba(0,245,160,.15)}
+#messagesAdmin .admin-reply-box [id^="reply-status-"]{font-size:.72rem!important;min-height:16px}
+#messagesAdmin .action-btn{border-radius:9px}
+#messagesAdmin .msg-admin-header .action-btn{flex:0 0 auto;padding:5px 9px!important;font-size:.7rem}
+#messagesAdmin .msg-admin-header .action-btn.delete{min-width:34px}
+#messagesAdmin .msg-admin-header button:disabled{opacity:.55;cursor:default}
+#messagesAdmin .no-messages{padding:60px 20px;background:var(--bg-card);border:1px dashed var(--border);border-radius:18px}
+@media(max-width:768px){#messagesAdmin{gap:12px}.panel-header{margin-bottom:22px!important}#messagesAdmin .msg-admin-header{align-items:flex-start;padding:14px}.msg-admin-header>div:last-child{width:100%;justify-content:space-between!important}#messagesAdmin .msg-admin-subject,#messagesAdmin .msg-admin-body{padding-left:14px;padding-right:14px}#messagesAdmin .admin-reply-box{padding-left:14px!important;padding-right:14px!important}#messagesAdmin .admin-reply-box .action-btn{width:100%}}
