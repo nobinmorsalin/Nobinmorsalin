@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Service image</title>
+  <desc id="desc">Abstract professional digital service visual</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1018"/>
+      <stop offset="1" stop-color="#182331"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#72f2a4"/>
+      <stop offset="1" stop-color="#62b0ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" rx="40" fill="url(#bg)"/>
+  <circle cx="950" cy="120" r="190" fill="#72f2a4" opacity=".08"/>
+  <circle cx="190" cy="620" r="250" fill="#62b0ff" opacity=".07"/>
+  <rect x="190" y="180" width="820" height="360" rx="28" fill="none" stroke="url(#line)" stroke-width="4" opacity=".65"/>
+  <path d="M250 450 L430 300 L570 410 L760 250 L950 420" fill="none" stroke="url(#line)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="430" cy="300" r="13" fill="#72f2a4"/>
+  <circle cx="570" cy="410" r="13" fill="#62b0ff"/>
+  <circle cx="760" cy="250" r="13" fill="#72f2a4"/>
+  <circle cx="950" cy="420" r="13" fill="#62b0ff"/>
+</svg>
