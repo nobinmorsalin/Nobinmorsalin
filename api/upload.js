@@ -18,7 +18,16 @@ const ALLOWED_TYPES = new Set([
 ]);
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
-const ALLOWED_PURPOSES = new Set(['project', 'client', 'profile']);
+
+// Keep this list in sync with the admin image upload controls.
+// Services were previously missing here, which caused:
+// "Invalid upload purpose." on service image uploads.
+const ALLOWED_PURPOSES = new Set([
+  'project',
+  'service',
+  'client',
+  'profile',
+]);
 
 function json(res, status, body) {
   res.status(status).json(body);
@@ -34,9 +43,6 @@ function safeBaseName(filename = 'image') {
   return allowedExtensions.has(extension) ? extension : '.bin';
 }
 
-// The Blob connection was created with the custom prefix
-// `BLOB_READ_WRITE_TOKEN`, so Vercel generated the read/write token as
-// `BLOB_READ_WRITE_TOKEN_READ_WRITE_TOKEN`.
 const BLOB_TOKEN =
   process.env.BLOB_READ_WRITE_TOKEN ||
   process.env.BLOB_READ_WRITE_TOKEN_READ_WRITE_TOKEN;
@@ -66,7 +72,11 @@ export default async function handler(req, res) {
     const file = first(files.file);
 
     if (!ALLOWED_PURPOSES.has(purpose)) {
-      return json(res, 400, { ok: false, error: 'Invalid upload purpose.' });
+      return json(res, 400, {
+        ok: false,
+        error: 'Invalid upload purpose.',
+        allowedPurposes: [...ALLOWED_PURPOSES],
+      });
     }
 
     if (!file || !file.filepath) {
