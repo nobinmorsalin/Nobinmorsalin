@@ -39,15 +39,14 @@
       }
 
       if (!force && nextSignature === signature) return;
-      signature = nextSignature;
 
-      /*
-       * Re-render only after the database actually changed. This prevents
-       * reply textareas from being destroyed every second while the admin is typing.
-       */
+      /* Never destroy an active reply textarea. Keep the old signature so the
+         same change is picked up immediately after the admin stops typing. */
       const active = document.activeElement;
       const typingReply = active && active.matches('textarea[id^="reply-"]');
       if (typingReply && !force) return;
+
+      signature = nextSignature;
 
       if (typeof window.renderOverview === 'function') {
         window.renderOverview();
@@ -70,7 +69,6 @@
   }
 
   function init() {
-    /* admin.js loads before this file, but login may happen later. */
     start();
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) refresh(true);
