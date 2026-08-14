@@ -1,6 +1,30 @@
 /* Visitor Live Chat — Neon + Admin Push */
 const { neon } = require('@neondatabase/serverless');
 
+function getVisitorMeta(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIp = req.headers['x-real-ip'];
+  const ip = String(forwarded || realIp || '').split(',')[0].trim() || 'Unknown';
+  const countryCode = String(
+    req.headers['x-vercel-ip-country'] ||
+    req.headers['cf-ipcountry'] ||
+    ''
+  ).trim().toUpperCase() || 'UN';
+
+  const countryNames = {
+    BD: 'Bangladesh', US: 'United States', GB: 'United Kingdom', CA: 'Canada',
+    AU: 'Australia', DE: 'Germany', FR: 'France', IN: 'India', PK: 'Pakistan',
+    AE: 'United Arab Emirates', SA: 'Saudi Arabia', MY: 'Malaysia', SG: 'Singapore',
+    JP: 'Japan', KR: 'South Korea', NL: 'Netherlands', IT: 'Italy', ES: 'Spain'
+  };
+
+  return {
+    ip,
+    countryCode,
+    countryName: countryNames[countryCode] || countryCode
+  };
+}
+
 async function notifyAdmin(req, conversationId, message) {
   try {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
@@ -24,7 +48,6 @@ async function notifyAdmin(req, conversationId, message) {
       console.error('LIVE CHAT PUSH HTTP', response.status, await response.text().catch(() => ''));
     }
   } catch (error) {
-    // Push failure must never prevent the chat message from being saved.
     console.error('LIVE CHAT PUSH ERROR:', error);
   }
 }
@@ -46,6 +69,7 @@ module.exports = async function handler(req, res) {
     const body = req.body || {};
     const message = typeof body.message === 'string' ? body.message.trim() : '';
     const conversationId = typeof body.conversationId === 'string' ? body.conversationId.trim() : '';
+    const visitor = getVisitorMeta(req);
 
     if (!message) return res.status(400).json({ ok: false, error: 'Message is required.' });
     if (!conversationId) return res.status(400).json({ ok: false, error: 'Conversation ID is required.' });
@@ -63,12 +87,10 @@ module.exports = async function handler(req, res) {
     `;
     await sql`ALTER TABLE portfolio_messages ADD COLUMN IF NOT EXISTS conversation_id TEXT`;
     await sql`ALTER TABLE portfolio_messages ADD COLUMN IF NOT EXISTS sender TEXT`;
+    await sql`ALTER TABLE portfolio_messages ADD COLUMN IF NOT EXISTS visitor_ip TEXT`;
+    await sql`ALTER TABLE portfolio_messages ADD COLUMN IF NOT EXISTS country_code TEXT`;
+    await sql`ALTER TABLE portfolio_messages ADD COLUMN IF NOT EXISTS country_name TEXT`;
 
-    /*
-     * A conversation is identified by the visitor's local conversation ID.
-     * The first visitor message gets one acknowledgement only. Every later
-     * message stays in the same conversation without another bot message.
-     */
     const existingConversation = await sql`
       SELECT COUNT(*)::int AS count
       FROM portfolio_messages
@@ -78,13 +100,12 @@ module.exports = async function handler(req, res) {
 
     const visitorMessage = await sql`
       INSERT INTO portfolio_messages
-        (name, email, subject, message, is_read, conversation_id, sender)
+        (name, email, subject, message, is_read, conversation_id, sender, visitor_ip, country_code, country_name)
       VALUES
-        ('Live Chat Visitor', '', 'Live Chat', ${message}, FALSE, ${conversationId}, 'visitor')
+        ('Live Chat Visitor', '', 'Live Chat', ${message}, FALSE, ${conversationId}, 'visitor', ${visitor.ip}, ${visitor.countryCode}, ${visitor.countryName})
       RETURNING id, created_at, conversation_id, sender
     `;
 
-    /* Push every visitor message to the admin device. */
     await notifyAdmin(req, conversationId, message);
 
     let reply = null;
@@ -95,9 +116,9 @@ module.exports = async function handler(req, res) {
 
       const botMessage = await sql`
         INSERT INTO portfolio_messages
-          (name, email, subject, message, is_read, conversation_id, sender)
+          (name, email, subject, message, is_read, conversation_id, sender, visitor_ip, country_code, country_name)
         VALUES
-          ('Nobin Morsalin', 'admin@portfolio.local', 'Live Chat Reply', ${reply}, TRUE, ${conversationId}, 'bot')
+          ('Nobin Morsalin', '', 'Live Chat Reply', ${reply}, TRUE, ${conversationId}, 'bot', ${visitor.ip}, ${visitor.countryCode}, ${visitor.countryName})
         RETURNING id, created_at
       `;
 
@@ -108,6 +129,12 @@ module.exports = async function handler(req, res) {
       ok: true,
       saved: true,
       isFirstMessage,
+      visitor: {
+        id: conversationId,
+        ip: visitor.ip,
+        countryCode: visitor.countryCode,
+        countryName: visitor.countryName
+      },
       messageId: visitorMessage[0]?.id || null,
       replyId,
       reply
