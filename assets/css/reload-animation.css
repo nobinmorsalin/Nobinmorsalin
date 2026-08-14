@@ -1,0 +1,124 @@
+/* =========================================================
+   NOBIN MORSALIN — PREMIUM PAGE RELOAD
+   Non-blocking visual shell; existing portfolio logic untouched.
+   ========================================================= */
+
+#pageLoader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(0, 245, 160, 0.08), transparent 34%),
+    #05080a;
+  color: #f5f7f7;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.55s cubic-bezier(.22,1,.36,1), visibility 0.55s;
+  overflow: hidden;
+}
+
+#pageLoader::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,245,160,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,160,.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
+  pointer-events: none;
+}
+
+#pageLoader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.page-loader-inner {
+  position: relative;
+  width: min(420px, calc(100vw - 56px));
+  text-align: center;
+  transform: translateY(0);
+  transition: transform .65s cubic-bezier(.22,1,.36,1), opacity .5s ease;
+}
+
+#pageLoader.is-hidden .page-loader-inner {
+  transform: translateY(-18px) scale(.985);
+  opacity: 0;
+}
+
+.page-loader-brand {
+  font-family: "Syne", sans-serif;
+  font-size: clamp(26px, 7vw, 44px);
+  font-weight: 800;
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+
+.page-loader-brand .bracket { color: #00f5a0; }
+.page-loader-brand .last { color: #00d9ff; }
+
+.page-loader-status {
+  margin-top: 14px;
+  color: rgba(245,247,247,.58);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.page-loader-status::after {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  text-align: left;
+  animation: loaderDots 1.1s steps(4,end) infinite;
+}
+
+.page-loader-progress {
+  position: relative;
+  height: 2px;
+  margin: 28px auto 0;
+  width: min(280px, 72vw);
+  overflow: hidden;
+  background: rgba(255,255,255,.09);
+  border-radius: 999px;
+}
+
+.page-loader-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, #00f5a0, #00d9ff);
+  animation: loaderProgress 1.05s cubic-bezier(.4,0,.2,1) forwards;
+  box-shadow: 0 0 18px rgba(0,245,160,.45);
+}
+
+.page-loader-glow {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(0,245,160,.08);
+  filter: blur(45px);
+  animation: loaderGlow 1.5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes loaderProgress { 0% { transform: translateX(-100%); } 100% { transform: translateX(0); } }
+@keyframes loaderDots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%, 100% { content: "..."; } }
+@keyframes loaderGlow { from { opacity: .55; transform: translate(-50%, -50%) scale(.92); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } }
+
+@media (prefers-reduced-motion: reduce) {
+  #pageLoader, .page-loader-inner { transition: opacity .2s ease, visibility .2s ease; }
+  .page-loader-progress::after, .page-loader-status::after, .page-loader-glow { animation: none; }
+  .page-loader-progress::after { transform: translateX(0); }
+}
