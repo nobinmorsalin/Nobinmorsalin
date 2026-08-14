@@ -27,27 +27,41 @@ function getVisitorMeta(req) {
 
 async function notifyAdmin(req, conversationId, message) {
   try {
-    const host = req.headers['x-forwarded-host'] || req.headers.host;
-    const proto = req.headers['x-forwarded-proto'] || 'https';
-    if (!host) return;
+    /*
+     * Never call the current x-forwarded-host here. Vercel can expose a
+     * protected deployment hostname internally, which returns 401. Always
+     * use the public production URL for the internal push endpoint.
+     */
+    const publicSite = String(
+      process.env.PUBLIC_SITE_URL ||
+      'https://nobinmorsalin.vercel.app'
+    ).replace(/\/$/, '');
 
-    const response = await fetch(`${proto}://${host}/api/push-send`, {
+    const response = await fetch(`${publicSite}/api/push-send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store'
+      },
       body: JSON.stringify({
         title: '💬 New Live Chat Message',
         body: message.length > 120 ? `${message.slice(0, 117)}...` : message,
         url: `/admin/#messages?conversation=${encodeURIComponent(conversationId)}`,
         icon: '/admin/app-icon.svg',
         badge: '/admin/app-icon.svg',
-        tag: `live-chat-${conversationId}-${Date.now()}`
+        tag: `live-chat-${conversationId}`
       })
     });
 
     if (!response.ok) {
-      console.error('LIVE CHAT PUSH HTTP', response.status, await response.text().catch(() => ''));
+      console.error(
+        'LIVE CHAT PUSH HTTP',
+        response.status,
+        await response.text().catch(() => '')
+      );
     }
   } catch (error) {
+    /* Push failure must never block saving the visitor message. */
     console.error('LIVE CHAT PUSH ERROR:', error);
   }
 }
@@ -56,6 +70,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Method not allowed' });
@@ -91,12 +106,21 @@ module.exports = async function handler(req, res) {
     await sql`ALTER TABLE portfolio_messages ADD COLUMN IF NOT EXISTS country_code TEXT`;
     await sql`ALTER TABLE portfolio_messages ADD COLUMN IF NOT EXISTS country_name TEXT`;
 
-    const existingConversation = await sql`
-      SELECT COUNT(*)::int AS count
+    /*
+     * Do not use message count as the first-message test. If an earlier
+     * insert succeeded but the acknowledgement failed, count-based logic
+     * would permanently suppress the acknowledgement. We only consider the
+     * acknowledgement already sent when a bot row exists.
+     */
+    const existingBotReply = await sql`
+      SELECT id
       FROM portfolio_messages
       WHERE conversation_id = ${conversationId}
+        AND sender = 'bot'
+      ORDER BY created_at ASC
+      LIMIT 1
     `;
-    const isFirstMessage = Number(existingConversation[0]?.count || 0) === 0;
+    const isFirstMessage = existingBotReply.length === 0;
 
     const visitorMessage = await sql`
       INSERT INTO portfolio_messages
@@ -106,6 +130,7 @@ module.exports = async function handler(req, res) {
       RETURNING id, created_at, conversation_id, sender
     `;
 
+    /* Push every visitor message to the admin device. */
     await notifyAdmin(req, conversationId, message);
 
     let reply = null;
