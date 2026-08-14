@@ -7,6 +7,35 @@
 
   const SERVICE_PLACEHOLDER = '/assets/images/service-placeholder.svg';
 
+  // Hide the legacy emoji-based service visual immediately so it never flashes
+  // before this enhanced renderer replaces it with an image.
+  function hideLegacyServiceIcon() {
+    if (document.getElementById('services-image-only-style')) return;
+    const style = document.createElement('style');
+    style.id = 'services-image-only-style';
+    style.textContent = `
+      #services .service-icon { display:none !important; }
+      #services .professional-service-card .service-image,
+      #services .professional-service-card .service-image img {
+        display:block;
+      }
+      #services .professional-service-card .service-image {
+        width:100%;
+        aspect-ratio:16/10;
+        overflow:hidden;
+        border-radius:18px;
+        margin-bottom:18px;
+        background:rgba(255,255,255,.04);
+      }
+      #services .professional-service-card .service-image img {
+        width:100%;
+        height:100%;
+        object-fit:cover;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function esc(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -20,6 +49,8 @@
   }
 
   function renderProfessionalServices() {
+    hideLegacyServiceIcon();
+
     const container = document.querySelector('#servicesGrid');
     if (!container || !window.PortfolioData) return;
 
@@ -68,6 +99,7 @@
     container.dataset.marqueeReady = 'true';
   }
 
+  hideLegacyServiceIcon();
   document.addEventListener('DOMContentLoaded', renderProfessionalServices);
   window.refreshProfessionalServices = renderProfessionalServices;
 })();
