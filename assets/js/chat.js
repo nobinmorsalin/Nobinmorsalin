@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let sending = false;
   let polling = null;
   let lastConversationSignature = '';
+  let knownMessageIds = new Set();
+  let audioContext = null;
+  let audioUnlocked = false;
 
   function getConversationId() {
     const KEY = 'nobin_live_chat_conversation_id';
@@ -25,7 +28,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const conversationId = getConversationId();
 
+  /*
+   * Browsers block autoplay audio until the visitor interacts with the page.
+   * Opening/typing/sending in the chat unlocks a tiny Web Audio context. After
+   * that, every newly received admin reply can play a short notification sound.
+   */
+  function unlockChatAudio() {
+    try {
+      if (!audioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        audioContext = new AudioCtx();
+      }
+
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+      }
+
+      audioUnlocked = true;
+    } catch (error) {
+      console.warn('CHAT AUDIO UNLOCK ERROR:', error);
+    }
+  }
+
+  function playReplySound() {
+    if (!audioUnlocked || !audioContext) return;
+
+    try {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+      }
+
+      const now = audioContext.currentTime;
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, now);
+      oscillator.frequency.exponentialRampToValueAtTime(1320, now + 0.11);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.25);
+    } catch (error) {
+      console.warn('CHAT REPLY SOUND ERROR:', error);
+    }
+  }
+
   chatToggle?.addEventListener('click', () => {
+    unlockChatAudio();
+
     isOpen = !isOpen;
     chatWindow?.classList.toggle('hidden', !isOpen);
     chatIcon?.classList.toggle('hidden', isOpen);
@@ -37,7 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  chatInput?.addEventListener('focus', unlockChatAudio, { passive: true });
+
   async function sendMessage() {
+    unlockChatAudio();
+
     if (sending) return;
     const text = chatInput?.value?.trim();
     if (!text) return;
@@ -99,6 +160,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const messages = Array.isArray(data.messages) ? data.messages : [];
       const nextSignature = signature(messages);
+
+      /* First load establishes the baseline — no sound for old replies. */
+      if (!knownMessageIds.size) {
+        messages.forEach(message => knownMessageIds.add(Number(message.id)));
+      } else {
+        let adminReplyReceived = false;
+
+        messages.forEach(message => {
+          const id = Number(message.id);
+          if (knownMessageIds.has(id)) return;
+
+          knownMessageIds.add(id);
+
+          if (message.sender === 'admin') {
+            adminReplyReceived = true;
+          }
+        });
+
+        if (adminReplyReceived) {
+          playReplySound();
+        }
+      }
+
       if (!force && nextSignature === lastConversationSignature) return;
       lastConversationSignature = nextSignature;
       renderConversation(messages);
