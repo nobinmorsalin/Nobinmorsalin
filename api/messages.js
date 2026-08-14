@@ -16,6 +16,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -59,12 +60,6 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ ok: true, messages });
       }
 
-      /*
-       * Admin live-chat view: one record = one visitor conversation.
-       * This prevents the same visitor from appearing as many separate cards.
-       * The transcript is flattened into one message field for compatibility
-       * with the existing admin renderer.
-       */
       const rows = await sql`
         SELECT id, name, email, subject, message, is_read, created_at,
                conversation_id, sender, visitor_ip, country_code, country_name
@@ -94,7 +89,6 @@ module.exports = async function handler(req, res) {
         const visitorMessages = items.filter(m => m.sender === 'visitor');
         const latestVisitor = visitorMessages[visitorMessages.length - 1] || items[items.length - 1];
         const latest = items[items.length - 1];
-        const id = latestVisitor?.id || latest.id;
         const visitorId = latestVisitor?.conversation_id || latest.conversation_id;
         const countryCode = latestVisitor?.country_code || latest.country_code || 'UN';
         const countryName = latestVisitor?.country_name || latest.country_name || 'Unknown';
@@ -114,10 +108,10 @@ module.exports = async function handler(req, res) {
         }).join('\n\n');
 
         return {
-          id,
-          name: `Visitor · ${String(visitorId).slice(-10)}`,
+          id: latestVisitor?.id || latest.id,
+          name: 'Live Visitor',
           email: '',
-          subject: `${flagEmoji(countryCode)} ${countryName} · IP ${ip} · ID ${visitorId} · ${items.length} messages`,
+          subject: `${flagEmoji(countryCode)} ${countryName} · ${items.length} messages · ${ip === 'Unknown' ? 'IP unavailable' : `IP ${ip}`}`,
           message: transcript,
           is_read: !unread,
           created_at: latest.created_at,
@@ -125,7 +119,9 @@ module.exports = async function handler(req, res) {
           sender: 'visitor',
           visitor_ip: ip,
           country_code: countryCode,
-          country_name: countryName
+          country_name: countryName,
+          message_count: items.length,
+          last_sender: latest.sender || 'visitor'
         };
       });
 
@@ -161,32 +157,42 @@ module.exports = async function handler(req, res) {
 
       if (action === 'reply') {
         const messageId = Number(body.messageId);
+        const conversationId = typeof body.conversationId === 'string' ? body.conversationId.trim() : '';
         const reply = typeof body.message === 'string' ? body.message.trim() : '';
 
-        if (!Number.isFinite(messageId) || messageId <= 0) {
-          return res.status(400).json({ ok: false, error: 'Valid message ID is required.' });
+        if ((!Number.isFinite(messageId) || messageId <= 0) && !conversationId) {
+          return res.status(400).json({ ok: false, error: 'Valid message ID or conversation ID is required.' });
         }
         if (!reply) return res.status(400).json({ ok: false, error: 'Reply message is required.' });
 
-        const original = await sql`
-          SELECT id, conversation_id, visitor_ip, country_code, country_name
-          FROM portfolio_messages
-          WHERE id = ${messageId}
-          LIMIT 1
-        `;
+        const original = conversationId
+          ? await sql`
+              SELECT id, conversation_id, visitor_ip, country_code, country_name
+              FROM portfolio_messages
+              WHERE conversation_id = ${conversationId}
+                AND sender = 'visitor'
+              ORDER BY created_at DESC
+              LIMIT 1
+            `
+          : await sql`
+              SELECT id, conversation_id, visitor_ip, country_code, country_name
+              FROM portfolio_messages
+              WHERE id = ${messageId}
+              LIMIT 1
+            `;
 
-        if (!original.length) return res.status(404).json({ ok: false, error: 'Original message not found.' });
+        if (!original.length) return res.status(404).json({ ok: false, error: 'Live chat conversation not found.' });
         if (!original[0].conversation_id) {
           return res.status(400).json({ ok: false, error: 'This message is not a live-chat conversation.' });
         }
 
-        const conversationId = original[0].conversation_id;
+        const targetConversation = original[0].conversation_id;
 
         const inserted = await sql`
           INSERT INTO portfolio_messages
             (name, email, subject, message, is_read, conversation_id, sender, visitor_ip, country_code, country_name)
           VALUES
-            ('Nobin Morsalin', '', 'Admin Reply', ${reply}, TRUE, ${conversationId}, 'admin',
+            ('Nobin Morsalin', '', 'Admin Reply', ${reply}, TRUE, ${targetConversation}, 'admin',
              ${original[0].visitor_ip || 'Unknown'}, ${original[0].country_code || 'UN'}, ${original[0].country_name || 'Unknown'})
           RETURNING id, created_at, conversation_id, sender
         `;
@@ -194,11 +200,11 @@ module.exports = async function handler(req, res) {
         await sql`
           UPDATE portfolio_messages
           SET is_read = TRUE
-          WHERE conversation_id = ${conversationId}
+          WHERE conversation_id = ${targetConversation}
             AND sender = 'visitor'
         `;
 
-        return res.status(201).json({ ok: true, reply: inserted[0] });
+        return res.status(201).json({ ok: true, reply: inserted[0], conversation_id: targetConversation });
       }
 
       if (action === 'read') {
