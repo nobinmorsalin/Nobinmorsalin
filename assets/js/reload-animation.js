@@ -15,8 +15,6 @@
     window.setTimeout(() => loader.remove(), reduceMotion ? 250 : 650);
   };
 
-  // Keep the shell visible long enough to feel intentional, but never long enough
-  // to make a fast page feel slow.
   const minimumVisible = reduceMotion ? 180 : 720;
   const startedAt = performance.now();
 
@@ -31,6 +29,5 @@
     window.addEventListener('load', finish, { once: true });
   }
 
-  // Safety net for slow/failed third-party resources.
   window.setTimeout(hide, 2200);
 })();

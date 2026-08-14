@@ -1,0 +1,13 @@
+/* Keep marquee motion, but make the complete track discoverable at once. */
+.services-marquee,.clients-marquee{position:relative;overflow:hidden}
+.services-marquee::before,.services-marquee::after,.clients-marquee::before,.clients-marquee::after{content:"";position:absolute;top:0;bottom:0;width:clamp(22px,6vw,90px);z-index:3;pointer-events:none}
+.services-marquee::before,.clients-marquee::before{left:0;background:linear-gradient(90deg,var(--bg,#080c10),transparent)}
+.services-marquee::after,.clients-marquee::after{right:0;background:linear-gradient(270deg,var(--bg,#080c10),transparent)}
+/* Motion remains exactly as before; this only prevents the moving cards from being
+   visually clipped by an unnecessarily narrow section wrapper. */
+.services-track,.clients-track{width:max-content;max-width:none}
+/* Add a compact overview row at the bottom of each marquee so every item can be
+   reached immediately while the original marquee continues above it. */
+.marquee-all-view{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;width:min(1180px,calc(100% - 32px));margin:4px auto 0;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(255,255,255,.025)}
+.marquee-all-view .all-view-item{min-width:0}
+@media(max-width:680px){.marquee-all-view{grid-template-columns:repeat(2,minmax(0,1fr));width:calc(100% - 20px);padding:10px;gap:9px}.marquee-all-view .all-view-item{font-size:12px}}
