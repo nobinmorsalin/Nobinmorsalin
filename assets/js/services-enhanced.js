@@ -1,9 +1,11 @@
 /*
  * FRONTEND SERVICES ENHANCEMENT
- * Keeps the existing services marquee but exposes professional CMS fields.
+ * Keeps the existing services marquee but uses image visuals for every service.
  */
 (function () {
   'use strict';
+
+  const SERVICE_PLACEHOLDER = '/assets/images/service-placeholder.svg';
 
   function esc(value) {
     return String(value ?? '')
@@ -32,15 +34,24 @@
     if (!visible.length) return;
 
     const card = (s) => {
-      const image = s.image || '';
+      const image = safeUrl(s.image) !== '#' ? safeUrl(s.image) : SERVICE_PLACEHOLDER;
       const features = Array.isArray(s.features) ? s.features.slice(0, 4) : [];
       const technologies = Array.isArray(s.technologies) ? s.technologies.slice(0, 6) : [];
       const link = safeUrl(s.url || s.link);
+      const name = s.name || 'Service';
 
       return `
         <article class="service-card professional-service-card">
-          ${image ? `<div class="service-image"><img src="${esc(safeUrl(image))}" alt="${esc(s.name || 'Service')}" loading="lazy"></div>` : `<div class="service-icon">${esc(s.icon || '⚡')}</div>`}
-          <h3 class="service-title">${esc(s.name || 'Service')}</h3>
+          <div class="service-image">
+            <img
+              src="${esc(image)}"
+              alt="${esc(name)}"
+              loading="lazy"
+              decoding="async"
+              onerror="this.onerror=null;this.src='${SERVICE_PLACEHOLDER}'"
+            >
+          </div>
+          <h3 class="service-title">${esc(name)}</h3>
           ${s.category ? `<div class="service-category">${esc(s.category)}</div>` : ''}
           <p class="service-desc">${esc(s.desc || s.description || '')}</p>
           ${s.longDescription ? `<p class="service-long-desc">${esc(s.longDescription)}</p>` : ''}
