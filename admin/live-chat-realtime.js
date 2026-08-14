@@ -24,6 +24,15 @@
     return `${messages.length}:${newest.id}:${newest.created_at}:${newest.is_read}:${newest.sender || ''}`;
   }
 
+  function loadMessagePolish() {
+    if (document.getElementById('admin-messages-polish-loader')) return;
+    const script = document.createElement('script');
+    script.id = 'admin-messages-polish-loader';
+    script.src = '/admin/messages-polish.js?v=1.0.0';
+    script.async = true;
+    document.head.appendChild(script);
+  }
+
   async function refresh(force = false) {
     if (!isAdminVisible() || requestInFlight || typeof window.loadMessagesFromAPI !== 'function') return;
 
@@ -69,6 +78,7 @@
   }
 
   function init() {
+    loadMessagePolish();
     start();
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) refresh(true);
