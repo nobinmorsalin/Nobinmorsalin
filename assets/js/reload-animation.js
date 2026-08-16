@@ -4,6 +4,13 @@
 (function () {
   'use strict';
 
+  // Load the additive capability section without changing the existing page
+  // structure or any of the site's existing feature modules.
+  const ecosystem = document.createElement('script');
+  ecosystem.src = 'assets/js/fullstack-ecosystem.js?v=1.0.0';
+  ecosystem.defer = true;
+  document.head.appendChild(ecosystem);
+
   const loader = document.getElementById('pageLoader');
   if (!loader) return;
 
