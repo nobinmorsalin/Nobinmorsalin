@@ -1,0 +1,188 @@
+/* Mobile responsive fixes: hero headline + Full-Stack ecosystem pipeline. */
+
+@media (max-width: 680px) {
+  .hero-title {
+    font-family: var(--font-head, 'Syne', sans-serif) !important;
+    font-size: clamp(2.05rem, 9.6vw, 3rem) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.045em !important;
+    max-width: 100% !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  .hero-title .title-accent {
+    display: inline-block !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .fse-section {
+    overflow: hidden !important;
+  }
+
+  .fse-container {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .fse-heading-row {
+    display: block !important;
+  }
+
+  .fse-heading .section-title {
+    max-width: 100% !important;
+  }
+
+  .fse-readout {
+    width: fit-content !important;
+    max-width: 100% !important;
+    margin-top: 18px !important;
+  }
+
+  .fse-architecture {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Turn the desktop 7-column pipeline into a true mobile system flow. */
+  .fse-pipeline {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 26px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 4px !important;
+  }
+
+  .fse-pipeline::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, transparent, rgba(0,245,160,.28) 5%, rgba(0,245,160,.2) 95%, transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .fse-node {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 18px 15px 18px !important;
+    border-radius: 17px !important;
+    z-index: 2 !important;
+  }
+
+  .fse-node-head {
+    margin-bottom: 14px !important;
+  }
+
+  .fse-node-label {
+    font-size: .51rem !important;
+  }
+
+  .fse-node h3 {
+    font-size: 1.05rem !important;
+    line-height: 1.14 !important;
+  }
+
+  .fse-node p {
+    min-height: 0 !important;
+    font-size: .72rem !important;
+    line-height: 1.5 !important;
+    margin-bottom: 14px !important;
+    max-width: 34rem !important;
+  }
+
+  .fse-chips {
+    gap: 7px !important;
+  }
+
+  .fse-chip {
+    max-width: 100% !important;
+    min-height: 29px !important;
+    font-size: .6rem !important;
+    padding: 5px 8px !important;
+  }
+
+  .fse-chip img {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* Connect cards vertically instead of leaving desktop side arrows. */
+  .fse-node-port {
+    top: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    width: 7px !important;
+    height: 7px !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .fse-node-port.fse-in {
+    top: -4px !important;
+  }
+
+  .fse-node-port.fse-out {
+    bottom: -4px !important;
+  }
+
+  .fse-stage-arrow {
+    top: auto !important;
+    right: auto !important;
+    bottom: -23px !important;
+    left: 50% !important;
+    width: 20px !important;
+    height: 20px !important;
+    transform: translateX(-50%) rotate(90deg) !important;
+    z-index: 5 !important;
+  }
+
+  .fse-flow-line {
+    display: none !important;
+  }
+
+  .fse-flow-caption {
+    margin-bottom: 14px !important;
+  }
+
+  .fse-foot {
+    display: block !important;
+    line-height: 1.7 !important;
+  }
+
+  .fse-foot b {
+    display: block !important;
+    margin-top: 7px !important;
+    line-height: 1.7 !important;
+  }
+}
+
+@media (min-width: 681px) and (max-width: 1050px) {
+  .fse-pipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .fse-node {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .hero-title {
+    font-size: 2.05rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fse-node,
+  .fse-stage-arrow {
+    transition: none !important;
+  }
+}
