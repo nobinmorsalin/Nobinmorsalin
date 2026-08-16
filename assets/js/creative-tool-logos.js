@@ -8,7 +8,8 @@
     'Adobe Photoshop': 'https://api.iconify.design/logos:adobe-photoshop.svg',
     'Adobe Illustrator': 'https://api.iconify.design/logos:adobe-illustrator.svg',
     'Figma': 'https://api.iconify.design/logos:figma.svg',
-    'Canva': 'https://api.iconify.design/logos:canva.svg'
+    'Canva': 'https://api.iconify.design/logos:canva.svg',
+    'CapCut': 'https://api.iconify.design/logos:capcut.svg'
   };
 
   function enhance(root = document) {
