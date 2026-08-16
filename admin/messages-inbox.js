@@ -31,6 +31,10 @@
     return Boolean(message?.conversation_id);
   }
 
+  function isMobile() {
+    return window.matchMedia('(max-width: 768px)').matches;
+  }
+
   function shortId(id) {
     const value = String(id || '');
     if (!value) return 'Message';
@@ -82,7 +86,7 @@
                   </span>
                   <span class="message-inbox-subject">${esc(subject)}</span>
                   <span class="message-inbox-preview">${esc(preview(message))}</span>
-                  <span class="message-inbox-meta">${esc(meta)}${isConversation(message) ? ` · <span class="message-inbox-id">#${esc(shortId(message.conversation_id))}</span>` : ''}</span>
+                  <span class="message-inbox-meta">${esc(meta)}${isConversation(message) ? ` · #${esc(shortId(message.conversation_id))}` : ''}</span>
                 </span>
                 ${unread ? '<span class="message-inbox-dot" aria-label="Unread"></span>' : ''}
               </button>
@@ -116,8 +120,8 @@
       : (message.email || 'Contact inquiry');
 
     return `
-      <section class="messages-conversation ${read ? '' : 'conversation-unread'}" data-selected-message="${esc(getConversationKey(message))}">
-        <div class="messages-conversation-head">
+      <section class="messages-conversation msg-admin-card ${read ? '' : 'msg-unread'}" id="msg-${id}" data-selected-message="${esc(getConversationKey(message))}">
+        <div class="messages-conversation-head msg-admin-header">
           <button type="button" class="messages-back-btn" onclick="window.closeAdminConversation()" aria-label="Back to inbox">← <span>Inbox</span></button>
           <div class="messages-conversation-person">
             <span class="messages-conversation-avatar">${esc((title.trim()[0] || 'M').toUpperCase())}</span>
@@ -148,6 +152,22 @@
     `;
   }
 
+  function renderLayout(el, messages) {
+    const selected = selectedConversationId
+      ? messages.find(message => getConversationKey(message) === selectedConversationId)
+      : null;
+
+    if (selectedConversationId && !selected) selectedConversationId = null;
+
+    const active = selectedConversationId
+      ? messages.find(message => getConversationKey(message) === selectedConversationId)
+      : null;
+
+    el.classList.toggle('messages-mobile-conversation', Boolean(active));
+    el.classList.add('messages-inbox-layout');
+    el.innerHTML = `${renderInbox(messages)}${renderConversation(active)}`;
+  }
+
   async function renderInboxView() {
     const el = document.getElementById('messagesAdmin');
     if (!el) return;
@@ -159,21 +179,19 @@
     const messages = getMessages();
     if (!messages.length) {
       selectedConversationId = null;
+      el.classList.remove('messages-inbox-layout', 'messages-mobile-conversation');
       el.innerHTML = '<div class="no-messages">📬 No messages yet</div>';
       return;
     }
 
-    const currentExists = messages.some(message => getConversationKey(message) === selectedConversationId);
-    if (!currentExists) {
+    // Desktop keeps the inbox and selected conversation visible together.
+    // Mobile opens the inbox first so the operator can choose any conversation.
+    if (!isMobile() && !selectedConversationId) {
       selectedConversationId = getConversationKey(messages[0]);
     }
 
-    const selected = messages.find(message => getConversationKey(message) === selectedConversationId) || messages[0];
+    renderLayout(el, messages);
 
-    el.classList.add('messages-inbox-layout');
-    el.innerHTML = `${renderInbox(messages)}${renderConversation(selected)}`;
-
-    // Keep the existing visual polish/reply enhancements working on the selected thread.
     requestAnimationFrame(() => {
       document.dispatchEvent(new CustomEvent('admin:messages-rendered'));
     });
@@ -187,20 +205,16 @@
 
     const el = document.getElementById('messagesAdmin');
     if (!el) return;
-    el.classList.add('messages-inbox-layout');
-    el.innerHTML = `${renderInbox(messages)}${renderConversation(selected)}`;
-    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
+    renderLayout(el, messages);
     document.dispatchEvent(new CustomEvent('admin:messages-rendered'));
   };
 
   window.closeAdminConversation = () => {
     selectedConversationId = null;
-    const messages = getMessages();
-    if (!messages.length) return;
-    selectedConversationId = getConversationKey(messages[0]);
     const el = document.getElementById('messagesAdmin');
-    if (!el) return;
-    el.innerHTML = `${renderInbox(messages)}${renderConversation(messages[0])}`;
+    const messages = getMessages();
+    if (!el || !messages.length) return;
+    renderLayout(el, messages);
   };
 
   const originalRender = window.renderMessagesAdmin;
@@ -211,7 +225,6 @@
       await renderInboxView();
     } catch (error) {
       console.error('ADMIN MESSAGE INBOX RENDER ERROR:', error);
-      // Fall back to the existing renderer if the inbox enhancement ever fails.
       try {
         await originalRender();
       } catch (fallbackError) {
@@ -219,7 +232,4 @@
       }
     }
   };
-
-  // The existing realtime script calls the global renderer when new messages arrive.
-  // No polling or notification behavior is changed here.
 })();
