@@ -499,29 +499,8 @@
 
 
     if (!visibleClients.length) {
-
-      container.innerHTML = `
-        <article class="client-card">
-
-          <span class="client-logo-fallback">
-            +
-          </span>
-
-          <div class="client-info">
-
-            <div class="client-name">
-              Your Brand
-            </div>
-
-            <div class="client-service">
-              Become a client
-            </div>
-
-          </div>
-
-        </article>
-      `;
-
+      container.innerHTML = '';
+      delete container.dataset.marqueeReady;
       return;
     }
 
