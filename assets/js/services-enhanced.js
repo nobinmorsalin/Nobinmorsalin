@@ -1,14 +1,13 @@
 /*
  * FRONTEND SERVICES ENHANCEMENT
- * Keeps the existing services marquee but uses image visuals for every service.
+ * Keeps the existing services marquee but presents a clean service preview.
+ * Full details remain available through the existing portfolio details modal.
  */
 (function () {
   'use strict';
 
   const SERVICE_PLACEHOLDER = '/assets/images/service-placeholder.svg';
 
-  // Hide the legacy emoji-based service visual immediately so it never flashes
-  // before this enhanced renderer replaces it with an image.
   function hideLegacyServiceIcon() {
     if (document.getElementById('services-image-only-style')) return;
     const style = document.createElement('style');
@@ -32,6 +31,9 @@
         height:100%;
         object-fit:cover;
       }
+      #services .professional-service-card {
+        cursor:pointer;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -39,7 +41,7 @@
   function esc(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+      .replace(/>/g, '&gt;').replace(/\"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
 
@@ -66,10 +68,8 @@
 
     const card = (s) => {
       const image = safeUrl(s.image) !== '#' ? safeUrl(s.image) : SERVICE_PLACEHOLDER;
-      const features = Array.isArray(s.features) ? s.features.slice(0, 4) : [];
-      const technologies = Array.isArray(s.technologies) ? s.technologies.slice(0, 6) : [];
-      const link = safeUrl(s.url || s.link);
       const name = s.name || 'Service';
+      const shortDescription = s.desc || s.shortDescription || s.description || '';
 
       return `
         <article class="service-card professional-service-card">
@@ -84,14 +84,7 @@
             >
           </div>
           <h3 class="service-title">${esc(name)}</h3>
-          ${s.category ? `<div class="service-category">${esc(s.category)}</div>` : ''}
-          <p class="service-desc">${esc(s.desc || s.description || '')}</p>
-          ${s.longDescription ? `<p class="service-long-desc">${esc(s.longDescription)}</p>` : ''}
-          ${technologies.length ? `<div class="service-tech">${technologies.map((t) => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
-          ${features.length ? `<ul class="service-features">${features.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
-          ${(s.price || s.deliveryTime) ? `<div class="service-meta">${s.price ? `<span>${esc(s.price)}</span>` : ''}${s.deliveryTime ? `<span>${esc(s.deliveryTime)}</span>` : ''}</div>` : ''}
-          ${s.featured ? `<div class="service-featured">Featured</div>` : ''}
-          ${link !== '#' ? `<a class="btn btn-ghost service-cta" href="${esc(link)}" target="_blank" rel="noopener">View Service ↗</a>` : ''}
+          <p class="service-desc">${esc(shortDescription)}</p>
         </article>`;
     };
 
@@ -105,8 +98,6 @@
   document.addEventListener('DOMContentLoaded', renderProfessionalServices);
   window.refreshProfessionalServices = renderProfessionalServices;
 
-  // PortfolioData refreshes the page after Admin/API data arrives. Ensure that
-  // refresh cannot leave the legacy emoji renderer as the final DOM state.
   const refreshPortfolio = window.refreshPortfolio;
   if (typeof refreshPortfolio === 'function') {
     window.refreshPortfolio = function () {
