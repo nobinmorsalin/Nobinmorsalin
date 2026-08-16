@@ -58,7 +58,6 @@
       card.dataset.liveChatEnhanced='1';
       const email=card.querySelector('.msg-admin-email');
       if(email){email.textContent='💬 Live Chat';email.removeAttribute('href');email.style.color='var(--accent)';}
-      const body=card.querySelector('.msg-admin-body');
       const replyBox=document.createElement('div');
       replyBox.style.cssText='margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)';
       replyBox.innerHTML=`<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><textarea class="admin-input live-reply-input" rows="2" placeholder="Reply to this live chat..."></textarea><button type="button" class="btn btn-primary live-reply-btn">Send Reply</button></div><div class="live-reply-status" style="font-size:.78rem;opacity:.7;margin-top:6px"></div>`;
@@ -96,4 +95,135 @@
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+/* Production admin session + navigation state fixes. */
+(() => {
+  'use strict';
+
+  const SESSION_KEY = 'portfolio_admin_session';
+  const SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
+  const ROUTES = new Set(['overview','services','projects','clients','skills','workflow','messages','settings']);
+
+  function createSession() {
+    const token = `${Date.now()}_${window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ token, expiresAt: Date.now() + SESSION_TTL }));
+    try { sessionStorage.setItem(SESSION_KEY, token); } catch (_) {}
+  }
+
+  if (window.AUTH) {
+    const originalLogin = window.AUTH.login.bind(window.AUTH);
+    const originalLogout = window.AUTH.logout.bind(window.AUTH);
+
+    window.AUTH.login = (username, password) => {
+      const ok = originalLogin(username, password);
+      if (ok) createSession();
+      return ok;
+    };
+
+    window.AUTH.check = () => {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (raw) {
+          const session = JSON.parse(raw);
+          if (session?.token && Number(session.expiresAt) > Date.now()) return true;
+          localStorage.removeItem(SESSION_KEY);
+        }
+      } catch (_) {
+        localStorage.removeItem(SESSION_KEY);
+      }
+      try { return Boolean(sessionStorage.getItem(SESSION_KEY)); } catch (_) { return false; }
+    };
+
+    window.AUTH.logout = () => {
+      localStorage.removeItem(SESSION_KEY);
+      originalLogout();
+    };
+  }
+
+  function currentRoute() {
+    const value = String(location.hash || '').replace(/^#/, '').split('?')[0];
+    return ROUTES.has(value) ? value : 'overview';
+  }
+
+  function writeRoute(route, replace = false) {
+    const target = ROUTES.has(route) ? route : 'overview';
+    const hash = `#${target}`;
+    if (location.hash === hash) return;
+    if (replace) history.replaceState(null, '', hash);
+    else history.pushState(null, '', hash);
+  }
+
+  function activateRoute(route) {
+    const button = Array.from(document.querySelectorAll('.sidebar .sb-btn'))
+      .find(item => item.dataset.panel === route);
+    if (button && !button.classList.contains('active')) button.click();
+  }
+
+  function setupNavigationState() {
+    document.querySelectorAll('.sidebar .sb-btn').forEach(button => {
+      if (button.dataset.routeStateBound === '1') return;
+      button.dataset.routeStateBound = '1';
+      button.addEventListener('click', () => writeRoute(button.dataset.panel));
+    });
+
+    const route = currentRoute();
+    if (!location.hash) writeRoute(route, true);
+    window.setTimeout(() => activateRoute(route), 0);
+    window.addEventListener('hashchange', () => activateRoute(currentRoute()));
+  }
+
+  function showPushOnboarding() {
+    if (!('Notification' in window) || !('PushManager' in window) || !('serviceWorker' in navigator)) return;
+    if (Notification.permission !== 'default') return;
+    if (localStorage.getItem('adminPushOnboardingSeen') === '1') return;
+    const wrap = document.getElementById('adminWrap');
+    const host = document.querySelector('#panel-overview .panel-header');
+    if (!wrap || wrap.classList.contains('hidden') || !host || document.getElementById('pushOnboarding')) return;
+
+    const box = document.createElement('div');
+    box.id = 'pushOnboarding';
+    box.style.cssText = 'margin-top:14px;padding:12px 14px;border:1px solid rgba(0,245,160,.18);border-radius:12px;background:rgba(0,245,160,.04);display:flex;align-items:center;gap:12px;flex-wrap:wrap';
+    box.innerHTML = '<div style="flex:1;min-width:220px"><strong>New live-chat notifications</strong><div style="font-size:.82rem;opacity:.72;margin-top:3px">Enable device notifications to be alerted when visitors send new live-chat messages.</div></div><button type="button" class="btn btn-primary" id="pushOnboardingEnable">Enable Notifications</button><button type="button" class="btn btn-ghost" id="pushOnboardingLater">Later</button>';
+    host.parentNode.insertBefore(box, host.nextSibling);
+
+    box.querySelector('#pushOnboardingEnable').addEventListener('click', async () => {
+      const button = box.querySelector('#pushOnboardingEnable');
+      button.disabled = true;
+      try {
+        const result = await window.enableAdminNotifications?.();
+        if (result?.ok) box.remove();
+        else button.disabled = false;
+      } catch (error) {
+        console.error('PUSH ONBOARDING ERROR:', error);
+        button.disabled = false;
+      }
+      localStorage.setItem('adminPushOnboardingSeen', '1');
+    });
+
+    box.querySelector('#pushOnboardingLater').addEventListener('click', () => {
+      localStorage.setItem('adminPushOnboardingSeen', '1');
+      box.remove();
+    });
+  }
+
+  async function syncGrantedPush() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      const result = await window.enableAdminNotifications?.();
+      if (!result?.ok) console.warn('Granted push permission is not synchronized:', result?.reason);
+    } catch (error) {
+      console.warn('Push subscription synchronization failed:', error);
+    }
+  }
+
+  function init() {
+    setupNavigationState();
+    window.setTimeout(() => {
+      if ('Notification' in window && Notification.permission === 'granted') syncGrantedPush();
+      else showPushOnboarding();
+    }, 500);
+  }
+
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
