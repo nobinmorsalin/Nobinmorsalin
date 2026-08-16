@@ -6,6 +6,16 @@
 
   const loader = document.getElementById('pageLoader');
 
+  const loadLogoEnhancer = () => {
+    if (document.getElementById('fse-logo-enhancer-script')) return;
+    const enhancer = document.createElement('script');
+    enhancer.id = 'fse-logo-enhancer-script';
+    enhancer.src = 'assets/js/fullstack-logo-enhancer.js?v=1.0.0';
+    enhancer.async = true;
+    enhancer.onerror = () => enhancer.remove();
+    document.head.appendChild(enhancer);
+  };
+
   const loadEcosystem = () => {
     // Load the additive capability section only after the initial page load
     // has completed. This keeps third-party ecosystem assets out of the
@@ -15,6 +25,7 @@
     ecosystem.id = 'fse-ecosystem-script';
     ecosystem.src = 'assets/js/fullstack-ecosystem.js?v=1.0.0';
     ecosystem.async = true;
+    ecosystem.onload = loadLogoEnhancer;
     ecosystem.onerror = () => ecosystem.remove();
     document.head.appendChild(ecosystem);
   };
