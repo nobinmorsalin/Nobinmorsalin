@@ -4,15 +4,26 @@
 (function () {
   'use strict';
 
-  // Load the additive capability section without changing the existing page
-  // structure or any of the site's existing feature modules.
-  const ecosystem = document.createElement('script');
-  ecosystem.src = 'assets/js/fullstack-ecosystem.js?v=1.0.0';
-  ecosystem.defer = true;
-  document.head.appendChild(ecosystem);
-
   const loader = document.getElementById('pageLoader');
-  if (!loader) return;
+
+  const loadEcosystem = () => {
+    // Load the additive capability section only after the initial page load
+    // has completed. This keeps third-party ecosystem assets out of the
+    // critical loading path and prevents them from delaying the portfolio.
+    if (document.getElementById('fse-ecosystem-script')) return;
+    const ecosystem = document.createElement('script');
+    ecosystem.id = 'fse-ecosystem-script';
+    ecosystem.src = 'assets/js/fullstack-ecosystem.js?v=1.0.0';
+    ecosystem.async = true;
+    ecosystem.onerror = () => ecosystem.remove();
+    document.head.appendChild(ecosystem);
+  };
+
+  if (!loader) {
+    if (document.readyState === 'complete') loadEcosystem();
+    else window.addEventListener('load', loadEcosystem, { once: true });
+    return;
+  }
 
   const reduceMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -27,7 +38,12 @@
 
   const finish = () => {
     const remaining = Math.max(0, minimumVisible - (performance.now() - startedAt));
-    window.setTimeout(hide, remaining);
+    window.setTimeout(() => {
+      hide();
+      // The main portfolio is already loaded and visible before the optional
+      // ecosystem module starts, so icon/CDN failures cannot block the page.
+      loadEcosystem();
+    }, remaining);
   };
 
   if (document.readyState === 'complete') {
@@ -36,5 +52,9 @@
     window.addEventListener('load', finish, { once: true });
   }
 
-  window.setTimeout(hide, 2200);
+  // Safety net: the page loader can never remain visible indefinitely.
+  window.setTimeout(() => {
+    hide();
+    loadEcosystem();
+  }, 2200);
 })();
