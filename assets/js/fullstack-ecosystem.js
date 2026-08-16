@@ -6,23 +6,7 @@
   const SECTION_ID = 'fullstack-ecosystem';
   const ICON_BASE = 'https://cdn.simpleicons.org/';
   const ICON_COLORS = {
-    html5:'E34F26',
-    css:'663399',
-    javascript:'F7DF1E',
-    tailwindcss:'06B6D4',
-    figma:'F24E1E',
-    framer:'0055FF',
-    nodejs:'5FA04E',
-    laravel:'FF2D20',
-    php:'777BB4',
-    mysql:'4479A1',
-    swagger:'85EA2D',
-    postman:'FF6C37',
-    woocommerce:'96588A',
-    stripe:'635BFF',
-    google:'4285F4',
-    meta:'0866FF',
-    n8n:'EA4B71'
+    html5:'E34F26', css:'663399', javascript:'F7DF1E', tailwindcss:'06B6D4', figma:'F24E1E', framer:'0055FF', nodejs:'5FA04E', laravel:'FF2D20', php:'777BB4', mysql:'4479A1', swagger:'85EA2D', postman:'FF6C37', woocommerce:'96588A', stripe:'635BFF', google:'4285F4', meta:'0866FF', n8n:'EA4B71'
   };
 
   const groups = [
@@ -94,7 +78,7 @@
       @keyframes fseLive{50%{opacity:.45;box-shadow:0 0 5px rgba(0,245,160,.3)}}@keyframes fseHalo{50%{transform:scale(1.1);opacity:.72}}@keyframes fseOrbit{to{transform:rotate(360deg)}}@keyframes fseTravel{0%{transform:translateX(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(900px);opacity:0}}
       @media(max-width:1100px){.fse-pipeline{grid-template-columns:repeat(4,minmax(0,1fr));max-width:900px}.fse-node:nth-child(1),.fse-node:nth-child(2),.fse-node:nth-child(3){grid-row:1}.fse-node:nth-child(4),.fse-node:nth-child(5),.fse-node:nth-child(6),.fse-node:nth-child(7){grid-row:2}.fse-stage-arrow{display:none}.fse-flow-line{display:none}}
       @media(max-width:900px){.fse-heading-row{align-items:flex-start;flex-direction:column}.fse-readout{margin-top:2px}.fse-pipeline{grid-template-columns:repeat(2,minmax(0,1fr));max-width:680px}.fse-node{min-height:220px}.fse-node p{min-height:0}}
-      @media(max-width:620px){.fse-section{padding:70px 0 78px}.fse-heading{margin-bottom:24px}.fse-heading .section-title{font-size:clamp(1.9rem,9vw,2.5rem)}.fse-heading .section-sub{font-size:.9rem}.fse-readout{width:100%}.fse-architecture{padding-top:18px}.fse-core{width:174px;height:174px;margin-bottom:18px}.fse-core-inner{width:114px;height:114px}.fse-core-inner strong{font-size:.98rem}.fse-flow-caption{margin-bottom:12px}.fse-pipeline{grid-template-columns:1fr;gap:0;max-width:430px}.fse-node{min-height:0;margin-left:18px;padding:18px 16px;border-radius:14px}.fse-node:not(:last-child){margin-bottom:28px}.fse-node:after{content:"";position:absolute;left:50%;bottom:-29px;width:1px;height:28px;background:linear-gradient(var(--accent),transparent);opacity:.45}.fse-node:last-child:after{display:none}.fse-node-port{display:none}.fse-stage-arrow{display:grid;right:auto;left:50%;top:auto;bottom:-36px;transform:translateX(-50%) rotate(90deg)}.fse-flow-line{display:none}.fse-foot{flex-direction:column;gap:8px;font-size:.53rem}.fse-foot b{line-height:1.7}.fse-chip{font-size:.57rem}}
+      @media(max-width:620px){.fse-section{padding:70px 0 78px}.fse-heading{margin-bottom:24px}.fse-heading .section-title{font-size:clamp(1.9rem,9vw,2.5rem)}.fse-heading .section-sub{font-size:.9rem}.fse-readout{width:100%}.fse-architecture{padding-top:18px}.fse-core{width:174px;height:174px;margin-bottom:18px}.fse-core-inner{width:114px;height:114px}.fse-core-inner strong{font-size:.98rem}.fse-flow-caption{margin-bottom:12px}.fse-pipeline{grid-template-columns:1fr;gap:0;max-width:430px}.fse-node{min-height:0;padding:18px 16px;border-radius:14px;margin-left:0;margin-right:0;width:100%;}.fse-node:not(:last-child){margin-bottom:28px}.fse-node:after{content:"";position:absolute;left:50%;bottom:-29px;width:1px;height:28px;background:linear-gradient(var(--accent),transparent);opacity:.45}.fse-node:last-child:after{display:none}.fse-node-port{display:none}.fse-stage-arrow{display:grid;right:auto;left:50%;top:auto;bottom:-36px;transform:translateX(-50%) rotate(90deg)}.fse-flow-line{display:none}.fse-foot{flex-direction:column;gap:8px;font-size:.53rem}.fse-foot b{line-height:1.7}.fse-chip{font-size:.57rem}}
       @media(prefers-reduced-motion:reduce){.fse-reveal{opacity:1!important;transform:none!important;filter:none!important;transition:none!important}.fse-core-halo,.fse-core-orbit,.fse-live-dot,.fse-flow-pulse{animation:none!important}.fse-node{transition:none!important}}
     `;
     document.head.appendChild(style);
