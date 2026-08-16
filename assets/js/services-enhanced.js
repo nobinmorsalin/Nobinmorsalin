@@ -39,7 +39,7 @@
   function esc(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+      .replace(/>/g, '&gt;').replace(/\"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
 
@@ -79,6 +79,7 @@
               alt="${esc(name)}"
               loading="lazy"
               decoding="async"
+              draggable="false"
               onerror="this.onerror=null;this.src='${SERVICE_PLACEHOLDER}'"
             >
           </div>
@@ -95,6 +96,7 @@
     };
 
     const html = visible.map(card).join('');
+    // Two identical copies make the existing CSS marquee continuous.
     container.innerHTML = html + html;
     container.dataset.marqueeReady = 'true';
   }
@@ -102,4 +104,14 @@
   hideLegacyServiceIcon();
   document.addEventListener('DOMContentLoaded', renderProfessionalServices);
   window.refreshProfessionalServices = renderProfessionalServices;
+
+  // PortfolioData refreshes the page after Admin/API data arrives. Ensure that
+  // refresh cannot leave the legacy emoji renderer as the final DOM state.
+  const refreshPortfolio = window.refreshPortfolio;
+  if (typeof refreshPortfolio === 'function') {
+    window.refreshPortfolio = function () {
+      refreshPortfolio();
+      renderProfessionalServices();
+    };
+  }
 })();

@@ -11,13 +11,21 @@
     '.section-sub',
     '.about-image-wrap',
     '.about-content',
-    '.professional-service-card',
-    '.service-card',
     '.project-card',
-    '.client-card',
     '.workflow-step',
     '.contact-info',
-    '.contact-form-wrap'
+    '.contact-desc',
+    '.contact-item',
+    '.contact-form-wrap',
+    '.form-group',
+    '#submitBtn'
+  ];
+
+  const dynamicRoots = [
+    '#projectsGrid',
+    '#workflowSteps',
+    '#contactItems',
+    '#contactForm'
   ];
 
   function install() {
@@ -48,37 +56,64 @@
           transition-duration: .58s;
         }
       }
+      @media (prefers-reduced-motion: reduce) {
+        .premium-reveal {
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+          transition: none !important;
+        }
+      }
     `;
     document.head.appendChild(style);
 
-    const elements = [];
-    selectors.forEach(selector => {
-      document.querySelectorAll(selector).forEach(el => {
-        if (el.classList.contains('premium-reveal')) return;
-        // Avoid revealing duplicate marquee copies individually; the marquee itself remains animated.
-        if (el.closest('.services-track, .clients-track') && !el.classList.contains('service-card') && !el.classList.contains('client-card')) return;
-        el.classList.add('premium-reveal');
-        const parent = el.parentElement;
-        const siblings = parent ? Array.from(parent.children).filter(x => x.matches && x.matches(selector)) : [];
-        const index = Math.max(0, siblings.indexOf(el));
-        el.dataset.revealIndex = index;
-        el.style.setProperty('--reveal-delay', `${Math.min(index * 65, 260)}ms`);
-        elements.push(el);
-      });
-    });
-
+    const observed = new WeakSet();
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('is-visible');
-        } else if (entry.boundingClientRect.top > 0) {
-          // Replay when the user scrolls back up and the section enters again.
+        } else {
+          // Reset in both directions so every re-entry can animate again.
           entry.target.classList.remove('is-visible');
         }
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
 
-    elements.forEach(el => observer.observe(el));
+    function collect(root = document) {
+      selectors.forEach(selector => {
+        const nodes = root.matches?.(selector)
+          ? [root]
+          : Array.from(root.querySelectorAll(selector));
+
+        nodes.forEach(el => {
+          // Marquee cards already have continuous motion; don't make them
+          // repeatedly fade as they pass through the viewport.
+          if (el.closest('.services-track, .clients-track')) return;
+          if (observed.has(el)) return;
+
+          el.classList.add('premium-reveal');
+          const parent = el.parentElement;
+          const siblings = parent
+            ? Array.from(parent.children).filter(x => x.matches?.(selector))
+            : [];
+          const index = Math.max(0, siblings.indexOf(el));
+          el.dataset.revealIndex = index;
+          el.style.setProperty('--reveal-delay', `${Math.min(index * 65, 260)}ms`);
+          observed.add(el);
+          observer.observe(el);
+        });
+      });
+    }
+
+    collect();
+    dynamicRoots.forEach(selector => {
+      const root = document.querySelector(selector);
+      if (root) {
+        collect(root);
+        const mutationObserver = new MutationObserver(() => collect(root));
+        mutationObserver.observe(root, { childList: true, subtree: true });
+      }
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
