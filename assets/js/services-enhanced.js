@@ -1,7 +1,7 @@
 /* NOBIN MORSALIN — SERVICES INFINITE MARQUEE */
 (function () {
   'use strict';
-  const SPEED_DESKTOP=42,SPEED_MOBILE=30,STYLE_ID='services-infinite-marquee-v7',ROOT='180px';
+  const SPEED_DESKTOP=42,SPEED_MOBILE=30,STYLE_ID='services-infinite-marquee-v8',ROOT='180px';
   let resizeTimer=null,renderLock=false,sectionObserver=null,imageObserver=null;
   const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
   const safeUrl=v=>{const x=String(v||'').trim();return /^(https?:\/\/|\/|#|mailto:)/i.test(x)?x:''};
