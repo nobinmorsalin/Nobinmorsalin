@@ -1,20 +1,16 @@
 /*
- * NOBIN MORSALIN — SERVICES CAROUSEL
- * One-card-at-a-time autoplay with a seamless loop.
- * Desktop + mobile responsive. View All disables autoplay while expanded.
+ * NOBIN MORSALIN — SERVICES INFINITE MARQUEE
+ * Continuous, seamless conveyor-style scrolling.
+ * Desktop + mobile responsive. View All pauses the marquee while expanded.
  */
 (function () {
   'use strict';
 
-  const STEP_DELAY = 3000;
-  const TRANSITION_MS = 700;
-  const STYLE_ID = 'services-sequential-style-v3';
+  const SPEED_DESKTOP = 42; // px/sec
+  const SPEED_MOBILE = 30;  // px/sec
+  const STYLE_ID = 'services-infinite-marquee-v4';
 
-  let timer = null;
   let resizeTimer = null;
-  let index = 0;
-  let itemCount = 0;
-  let running = false;
   let renderLock = false;
   let sectionObserver = null;
 
@@ -52,7 +48,7 @@
         overflow: hidden;
       }
 
-      #services .services-track-sequential {
+      #services .services-track-infinite {
         display: flex !important;
         flex-wrap: nowrap !important;
         align-items: stretch !important;
@@ -61,13 +57,22 @@
         max-width: none !important;
         margin: 0 !important;
         padding: 0 24px 10px !important;
-        animation: none !important;
+        animation-name: servicesInfiniteScroll;
+        animation-duration: var(--services-marquee-duration, 30s);
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        animation-direction: normal;
+        animation-play-state: running;
         will-change: transform;
         transform: translate3d(0,0,0);
-        transition: transform ${TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1);
       }
 
-      #services .services-track-sequential .professional-service-card {
+      @keyframes servicesInfiniteScroll {
+        from { transform: translate3d(0,0,0); }
+        to { transform: translate3d(calc(-1 * var(--services-loop-distance, 0px)),0,0); }
+      }
+
+      #services .services-track-infinite .professional-service-card {
         flex: 0 0 clamp(280px, 28vw, 320px) !important;
         width: clamp(280px, 28vw, 320px) !important;
         min-width: clamp(280px, 28vw, 320px) !important;
@@ -92,18 +97,23 @@
 
       #services .service-icon { display: none !important; }
 
-      #services.marquee-expanded .services-track-sequential {
+      /* View All becomes a normal catalogue and stops the conveyor. */
+      #services.marquee-expanded .services-track-infinite {
+        animation: none !important;
         transform: none !important;
-        transition: none !important;
+        width: min(100%,1160px) !important;
+        max-width: 1160px !important;
+        margin: 0 auto !important;
       }
 
       @media (max-width: 680px) {
-        #services .services-track-sequential {
+        #services .services-track-infinite {
           gap: 14px !important;
           padding: 0 16px 10px !important;
+          animation-duration: var(--services-marquee-duration-mobile, 30s);
         }
 
-        #services .services-track-sequential .professional-service-card {
+        #services .services-track-infinite .professional-service-card {
           flex-basis: calc(100vw - 48px) !important;
           width: calc(100vw - 48px) !important;
           min-width: calc(100vw - 48px) !important;
@@ -112,98 +122,28 @@
       }
 
       @media (prefers-reduced-motion: reduce) {
-        #services .services-track-sequential {
-          transition: none !important;
+        #services .services-track-infinite {
+          animation-duration: 60s !important;
         }
       }
     `;
     document.head.appendChild(style);
   }
 
-  function clearTimer() {
-    if (timer !== null) {
-      window.clearTimeout(timer);
-      timer = null;
-    }
-  }
-
   function isExpanded() {
     return elements().section?.classList.contains('marquee-expanded') === true;
   }
 
-  function getStep(track) {
-    const card = track?.querySelector('.professional-service-card');
-    if (!card) return 0;
-    const gap = parseFloat(window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || '0') || 0;
-    return card.getBoundingClientRect().width + gap;
-  }
+  function getVisibleServices() {
+    if (!window.PortfolioData || typeof window.PortfolioData.get !== 'function') return [];
 
-  function moveTo(nextIndex, animated) {
-    const { track } = elements();
-    if (!track) return;
+    const services = window.PortfolioData.get('services');
+    if (!Array.isArray(services)) return [];
 
-    const step = getStep(track);
-    if (!step) return;
-
-    track.style.transition = animated
-      ? `transform ${TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1)`
-      : 'none';
-    track.style.transform = `translate3d(${-nextIndex * step}px, 0, 0)`;
-  }
-
-  function schedule() {
-    clearTimer();
-    if (!running || isExpanded() || itemCount <= 1) return;
-
-    timer = window.setTimeout(() => {
-      if (!running || isExpanded() || itemCount <= 1) return;
-
-      index += 1;
-
-      /*
-       * We render two copies. The first item of the second copy is exactly
-       * one full catalogue length away, so after the last real item is shown
-       * we can jump back to zero invisibly and continue forever.
-       */
-      if (index > itemCount) {
-        index = 0;
-        moveTo(0, false);
-        window.requestAnimationFrame(() => schedule());
-        return;
-      }
-
-      moveTo(index, true);
-
-      if (index === itemCount) {
-        window.setTimeout(() => {
-          if (!running || isExpanded()) return;
-          index = 0;
-          moveTo(0, false);
-          schedule();
-        }, TRANSITION_MS + 60);
-      } else {
-        schedule();
-      }
-    }, STEP_DELAY);
-  }
-
-  function start() {
-    running = true;
-    schedule();
-  }
-
-  function stop() {
-    running = false;
-    clearTimer();
-  }
-
-  function applyCurrentPosition() {
-    if (isExpanded()) {
-      moveTo(0, false);
-      return;
-    }
-    index = Math.max(0, Math.min(index, itemCount));
-    moveTo(index, false);
+    return services
+      .filter(Boolean)
+      .filter(service => service.visible !== false && service.active !== false)
+      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
   }
 
   function buildCard(service) {
@@ -229,24 +169,58 @@
     `;
   }
 
-  function getVisibleServices() {
-    if (!window.PortfolioData || typeof window.PortfolioData.get !== 'function') return [];
-
-    const services = window.PortfolioData.get('services');
-    if (!Array.isArray(services)) return [];
-
-    return services
-      .filter(Boolean)
-      .filter(service => service.visible !== false && service.active !== false)
-      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+  function setupTrack(track) {
+    track.classList.remove('services-track-sequential');
+    track.classList.add('services-track-infinite');
+    track.dataset.marqueeReady = 'true';
   }
 
-  function setupTrack() {
-    const { track } = elements();
-    if (!track) return;
+  function calculateLoopDistance(track, itemCount) {
+    const cards = Array.from(track.querySelectorAll('.professional-service-card'));
+    if (!itemCount || cards.length < itemCount * 2) return 0;
 
-    track.classList.add('services-track-sequential');
-    track.dataset.marqueeReady = 'true';
+    const firstCopy = cards.slice(0, itemCount);
+    if (!firstCopy.length) return 0;
+
+    const trackRect = track.getBoundingClientRect();
+    const firstLeft = firstCopy[0].getBoundingClientRect().left;
+    const secondCopyFirst = cards[itemCount].getBoundingClientRect().left;
+
+    // The second copy starts exactly where the first copy ends, including gap.
+    // This makes the CSS loop reset invisible and genuinely seamless.
+    let distance = secondCopyFirst - firstLeft;
+
+    // Fallback for unusual layout measurements.
+    if (!Number.isFinite(distance) || distance <= 0) {
+      const last = firstCopy[firstCopy.length - 1].getBoundingClientRect();
+      distance = (last.right - firstLeft) + (parseFloat(getComputedStyle(track).gap) || 0);
+    }
+
+    if (!Number.isFinite(distance) || distance <= 0) {
+      distance = trackRect.width / 2;
+    }
+
+    return Math.round(distance * 100) / 100;
+  }
+
+  function applySpeed(track) {
+    const distance = Number(track.dataset.loopDistance || 0);
+    if (!distance) return;
+
+    const mobile = window.matchMedia('(max-width: 680px)').matches;
+    const speed = mobile ? SPEED_MOBILE : SPEED_DESKTOP;
+    const duration = Math.max(10, distance / speed);
+
+    track.style.setProperty('--services-loop-distance', `${distance}px`);
+    track.style.setProperty('--services-marquee-duration', `${duration}s`);
+    track.style.setProperty('--services-marquee-duration-mobile', `${duration}s`);
+
+    // Restart only after recalculation (e.g. resize), never during normal motion.
+    if (!isExpanded()) {
+      track.style.animation = 'none';
+      void track.offsetWidth;
+      track.style.animation = '';
+    }
   }
 
   function render() {
@@ -254,7 +228,6 @@
     renderLock = true;
 
     installStyles();
-    clearTimer();
 
     const { section, track, viewport } = elements();
     if (!section || !track || !viewport) {
@@ -263,27 +236,28 @@
     }
 
     const services = getVisibleServices();
-    itemCount = services.length;
-    index = 0;
-
-    if (!itemCount) {
+    if (!services.length) {
       track.innerHTML = '';
-      stop();
       renderLock = false;
       return;
     }
 
-    const firstCopy = services.map(buildCard).join('');
-    const secondCopy = services.map(buildCard).join('');
+    /*
+     * Two identical copies are kept side-by-side. CSS moves the whole strip
+     * continuously at a constant linear speed, then repeats after exactly one
+     * catalogue width. There is no per-card pause and no visible jump.
+     */
+    const copy = services.map(buildCard).join('');
+    track.innerHTML = copy + copy;
+    setupTrack(track);
 
-    /* Two copies = seamless reset after every service has been shown. */
-    track.innerHTML = firstCopy + secondCopy;
-    setupTrack();
-    moveTo(0, false);
-
-    renderLock = false;
-
-    if (!section.classList.contains('marquee-expanded')) start();
+    // Wait one frame so responsive card widths are final before measuring.
+    requestAnimationFrame(() => {
+      const distance = calculateLoopDistance(track, services.length);
+      track.dataset.loopDistance = String(distance);
+      applySpeed(track);
+      renderLock = false;
+    });
   }
 
   function observeExpandedState() {
@@ -292,13 +266,10 @@
 
     sectionObserver = new MutationObserver(() => {
       if (section.classList.contains('marquee-expanded')) {
-        stop();
-        index = 0;
-        moveTo(0, false);
+        track.style.animationPlayState = 'paused';
       } else {
-        index = 0;
-        moveTo(0, false);
-        start();
+        // Restart from the current beginning only when View All is closed.
+        track.style.animationPlayState = 'running';
       }
     });
 
@@ -316,14 +287,13 @@
     window.addEventListener('resize', () => {
       window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(() => {
-        applyCurrentPosition();
-      }, 120);
+        render();
+      }, 160);
     }, { passive: true });
   }
 
   window.refreshProfessionalServices = render;
 
-  /* Keep Admin/data refreshes compatible with the sequential renderer. */
   const originalRefresh = window.refreshPortfolio;
   if (typeof originalRefresh === 'function' && !originalRefresh.__servicesWrapped) {
     const wrappedRefresh = function () {
