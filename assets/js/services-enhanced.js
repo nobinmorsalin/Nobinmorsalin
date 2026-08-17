@@ -2,17 +2,21 @@
  * NOBIN MORSALIN — SERVICES INFINITE MARQUEE
  * Continuous, seamless conveyor-style scrolling.
  * Desktop + mobile responsive. View All pauses the marquee while expanded.
+ * Image loading is progressive and non-blocking: only cards near the viewport
+ * request their real image; duplicated marquee cards never eagerly download.
  */
 (function () {
   'use strict';
 
   const SPEED_DESKTOP = 42;
   const SPEED_MOBILE = 30;
-  const STYLE_ID = 'services-infinite-marquee-v5';
+  const STYLE_ID = 'services-infinite-marquee-v6';
+  const IMAGE_ROOT_MARGIN = '240px';
 
   let resizeTimer = null;
   let renderLock = false;
   let sectionObserver = null;
+  let imageObserver = null;
 
   function esc(value) {
     return String(value ?? '')
@@ -93,12 +97,11 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        background: rgba(255,255,255,.04);
       }
 
       #services .service-icon { display: none !important; }
 
-      /* IMPORTANT: these rules intentionally outrank the marquee flex rules.
-         View All must become a real vertical catalogue on every breakpoint. */
       #services.marquee-expanded .services-marquee {
         overflow: visible !important;
       }
@@ -198,20 +201,26 @@
       .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
   }
 
-  function buildCard(service) {
+  function buildCard(service, eager) {
     const image = safeUrl(service.image) || '/assets/images/service-placeholder.svg';
     const name = service.name || service.title || 'Service';
     const short = service.desc || service.shortDescription || service.description || '';
+    const imageMarkup = image === '/assets/images/service-placeholder.svg'
+      ? `src="${image}"`
+      : eager
+        ? `src="${esc(image)}"`
+        : `src="/assets/images/service-placeholder.svg" data-src="${esc(image)}"`;
 
     return `
       <article class="service-card professional-service-card">
         <div class="service-image">
           <img
-            src="${esc(image)}"
+            ${imageMarkup}
             alt="${esc(name)}"
-            loading="lazy"
+            loading="${eager ? 'eager' : 'lazy'}"
             decoding="async"
             draggable="false"
+            fetchpriority="${eager ? 'high' : 'low'}"
             onerror="this.onerror=null;this.src='/assets/images/service-placeholder.svg'"
           />
         </div>
@@ -225,6 +234,37 @@
     track.classList.remove('services-track-sequential');
     track.classList.add('services-track-infinite');
     track.dataset.marqueeReady = 'true';
+  }
+
+  function setupImageObserver(track) {
+    if (imageObserver) imageObserver.disconnect();
+
+    const loadImage = (img) => {
+      const source = img.dataset.src;
+      if (!source || img.dataset.loaded === 'true') return;
+      img.dataset.loaded = 'true';
+      img.src = source;
+      img.removeAttribute('data-src');
+    };
+
+    if (!('IntersectionObserver' in window)) {
+      track.querySelectorAll('img[data-src]').forEach(loadImage);
+      return;
+    }
+
+    imageObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        loadImage(entry.target);
+        observer.unobserve(entry.target);
+      });
+    }, {
+      root: elements().viewport || null,
+      rootMargin: IMAGE_ROOT_MARGIN,
+      threshold: 0.01
+    });
+
+    track.querySelectorAll('img[data-src]').forEach(img => imageObserver.observe(img));
   }
 
   function calculateLoopDistance(track, itemCount) {
@@ -281,9 +321,15 @@
       return;
     }
 
-    const copy = services.map(buildCard).join('');
-    track.innerHTML = copy + copy;
+    // Only the first couple of visible cards are allowed to request images
+    // immediately. The rest load progressively as they approach the viewport.
+    // The second marquee copy never gets an eager image request.
+    const firstCopy = services.map((service, index) => buildCard(service, index < 2)).join('');
+    const secondCopy = services.map(service => buildCard(service, false)).join('');
+
+    track.innerHTML = firstCopy + secondCopy;
     setupTrack(track);
+    setupImageObserver(track);
 
     requestAnimationFrame(() => {
       const distance = calculateLoopDistance(track, services.length);
@@ -302,8 +348,10 @@
         track.style.animation = 'none';
         track.style.animationPlayState = 'paused';
         track.style.transform = 'none';
+        setupImageObserver(track);
       } else {
         track.style.animationPlayState = 'running';
+        setupImageObserver(track);
       }
     });
 
