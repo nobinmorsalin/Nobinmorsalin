@@ -6,9 +6,9 @@
 (function () {
   'use strict';
 
-  const SPEED_DESKTOP = 42; // px/sec
-  const SPEED_MOBILE = 30;  // px/sec
-  const STYLE_ID = 'services-infinite-marquee-v4';
+  const SPEED_DESKTOP = 42;
+  const SPEED_MOBILE = 30;
+  const STYLE_ID = 'services-infinite-marquee-v5';
 
   let resizeTimer = null;
   let renderLock = false;
@@ -97,13 +97,48 @@
 
       #services .service-icon { display: none !important; }
 
-      /* View All becomes a normal catalogue and stops the conveyor. */
+      /* IMPORTANT: these rules intentionally outrank the marquee flex rules.
+         View All must become a real vertical catalogue on every breakpoint. */
+      #services.marquee-expanded .services-marquee {
+        overflow: visible !important;
+      }
+
       #services.marquee-expanded .services-track-infinite {
-        animation: none !important;
-        transform: none !important;
-        width: min(100%,1160px) !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        grid-auto-flow: row !important;
+        align-items: stretch !important;
+        gap: 24px !important;
+        width: min(100%, 1160px) !important;
         max-width: 1160px !important;
+        min-width: 0 !important;
         margin: 0 auto !important;
+        padding: 10px 24px 18px !important;
+        animation: none !important;
+        animation-play-state: paused !important;
+        transform: none !important;
+        will-change: auto !important;
+      }
+
+      #services.marquee-expanded .services-track-infinite .professional-service-card {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        flex: none !important;
+        margin: 0 !important;
+      }
+
+      #services.marquee-expanded .services-track-infinite .view-all-duplicate {
+        display: none !important;
+      }
+
+      @media (max-width: 900px) {
+        #services.marquee-expanded .services-track-infinite {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 16px !important;
+          padding-inline: 16px !important;
+        }
       }
 
       @media (max-width: 680px) {
@@ -118,6 +153,23 @@
           width: calc(100vw - 48px) !important;
           min-width: calc(100vw - 48px) !important;
           max-width: none !important;
+        }
+
+        #services.marquee-expanded .services-track-infinite {
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          gap: 14px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          padding: 8px 16px 16px !important;
+        }
+
+        #services.marquee-expanded .services-track-infinite .professional-service-card {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: none !important;
+          flex: none !important;
         }
       }
 
@@ -179,28 +231,16 @@
     const cards = Array.from(track.querySelectorAll('.professional-service-card'));
     if (!itemCount || cards.length < itemCount * 2) return 0;
 
-    const firstCopy = cards.slice(0, itemCount);
-    if (!firstCopy.length) return 0;
-
-    const trackRect = track.getBoundingClientRect();
-    const firstLeft = firstCopy[0].getBoundingClientRect().left;
+    const firstLeft = cards[0].getBoundingClientRect().left;
     const secondCopyFirst = cards[itemCount].getBoundingClientRect().left;
-
-    // The second copy starts exactly where the first copy ends, including gap.
-    // This makes the CSS loop reset invisible and genuinely seamless.
     let distance = secondCopyFirst - firstLeft;
 
-    // Fallback for unusual layout measurements.
     if (!Number.isFinite(distance) || distance <= 0) {
-      const last = firstCopy[firstCopy.length - 1].getBoundingClientRect();
+      const last = cards[itemCount - 1].getBoundingClientRect();
       distance = (last.right - firstLeft) + (parseFloat(getComputedStyle(track).gap) || 0);
     }
 
-    if (!Number.isFinite(distance) || distance <= 0) {
-      distance = trackRect.width / 2;
-    }
-
-    return Math.round(distance * 100) / 100;
+    return Number.isFinite(distance) && distance > 0 ? Math.round(distance * 100) / 100 : 0;
   }
 
   function applySpeed(track) {
@@ -215,7 +255,6 @@
     track.style.setProperty('--services-marquee-duration', `${duration}s`);
     track.style.setProperty('--services-marquee-duration-mobile', `${duration}s`);
 
-    // Restart only after recalculation (e.g. resize), never during normal motion.
     if (!isExpanded()) {
       track.style.animation = 'none';
       void track.offsetWidth;
@@ -242,16 +281,10 @@
       return;
     }
 
-    /*
-     * Two identical copies are kept side-by-side. CSS moves the whole strip
-     * continuously at a constant linear speed, then repeats after exactly one
-     * catalogue width. There is no per-card pause and no visible jump.
-     */
     const copy = services.map(buildCard).join('');
     track.innerHTML = copy + copy;
     setupTrack(track);
 
-    // Wait one frame so responsive card widths are final before measuring.
     requestAnimationFrame(() => {
       const distance = calculateLoopDistance(track, services.length);
       track.dataset.loopDistance = String(distance);
@@ -266,9 +299,10 @@
 
     sectionObserver = new MutationObserver(() => {
       if (section.classList.contains('marquee-expanded')) {
+        track.style.animation = 'none';
         track.style.animationPlayState = 'paused';
+        track.style.transform = 'none';
       } else {
-        // Restart from the current beginning only when View All is closed.
         track.style.animationPlayState = 'running';
       }
     });
@@ -286,9 +320,7 @@
 
     window.addEventListener('resize', () => {
       window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(() => {
-        render();
-      }, 160);
+      resizeTimer = window.setTimeout(render, 160);
     }, { passive: true });
   }
 
