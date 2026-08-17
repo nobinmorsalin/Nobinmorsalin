@@ -5,7 +5,7 @@
    - Existing localStorage keys are preserved.
    - Admin changes are persisted through /api/portfolio.
    - Existing localStorage content is never silently overwritten or deleted.
-   - DEFAULTS remain available as a safe fallback.
+   - DEFAULTS remain available as a safe fallback for non-public/admin use.
 ═══════════════════════════════════════════════ */
 
 const DATA_KEYS = {
@@ -72,41 +72,49 @@ const PortfolioData = {
   _version: 0,
   _loaded: false,
   _conflict: false,
+  _loadStarted: false,
 
   async load() {
-    try {
-      const response = await fetch(`/api/portfolio?_=${Date.now()}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        cache: 'no-store'
-      });
+    if (this._loadStarted && this._loadingPromise) return this._loadingPromise;
+    this._loadStarted = true;
 
-      if (response.ok) {
-        const payload = await response.json();
-        this._remote = payload?.data && typeof payload.data === 'object' ? payload.data : null;
-        this._version = Number.isSafeInteger(Number(payload?.version)) ? Number(payload.version) : 1;
-        this._loaded = Boolean(this._remote);
-        this._conflict = this.hasLocalStorageData();
-        return { ok: true, data: this._remote, version: this._version, conflict: this._conflict };
-      }
+    this._loadingPromise = (async () => {
+      try {
+        const response = await fetch(`/api/portfolio?_=${Date.now()}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store'
+        });
 
-      if (response.status === 404) {
-        this._remote = this.cloneDefaults();
+        if (response.ok) {
+          const payload = await response.json();
+          this._remote = payload?.data && typeof payload.data === 'object' ? payload.data : null;
+          this._version = Number.isSafeInteger(Number(payload?.version)) ? Number(payload.version) : 1;
+          this._loaded = Boolean(this._remote);
+          this._conflict = this.hasLocalStorageData();
+          return { ok: true, data: this._remote, version: this._version, conflict: this._conflict };
+        }
+
+        if (response.status === 404) {
+          this._remote = null;
+          this._version = 0;
+          this._loaded = false;
+          this._conflict = this.hasLocalStorageData();
+          return { ok: false, initialized: false, data: null, version: 0, conflict: this._conflict };
+        }
+
+        throw new Error(`Portfolio API returned ${response.status}`);
+      } catch (error) {
+        console.warn('PortfolioData.load() failed:', error);
+        this._remote = null;
         this._version = 0;
         this._loaded = false;
         this._conflict = this.hasLocalStorageData();
-        return { ok: false, initialized: false, data: this._remote, version: 0, conflict: this._conflict };
+        return { ok: false, data: null, version: 0, conflict: this._conflict, error };
       }
+    })();
 
-      throw new Error(`Portfolio API returned ${response.status}`);
-    } catch (error) {
-      console.warn('PortfolioData.load() failed:', error);
-      this._remote = null;
-      this._version = 0;
-      this._loaded = false;
-      this._conflict = this.hasLocalStorageData();
-      return { ok: false, data: this.cloneDefaults(), version: 0, conflict: this._conflict, error };
-    }
+    return this._loadingPromise;
   },
 
   async save(key, value) {
@@ -151,11 +159,15 @@ const PortfolioData = {
   get(key) {
     if (this._remote && Object.prototype.hasOwnProperty.call(this._remote, key)) return this._remote[key];
 
-    /*
-     * Database/API data is the primary source. Legacy localStorage is kept
-     * only as preserved data for migration/debugging and must not silently
-     * become the public source when a remote load fails.
-     */
+    // Public frontend must never render deleted/demo DEFAULTS while the
+    // authoritative API request is still pending or has failed. This is what
+    // previously caused deleted demo cards to flash on first visit and vanish
+    // only after a reload/cache timing changed.
+    if (typeof window !== 'undefined' && !this._loaded) {
+      if (key === 'settings' || key === 'about') return {};
+      return [];
+    }
+
     return DEFAULTS[key];
   },
 
