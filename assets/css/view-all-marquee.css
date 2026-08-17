@@ -1,7 +1,55 @@
 .marquee-view-all-wrap{display:flex;justify-content:center;margin:-2px auto 8px}.marquee-view-all-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(255,255,255,.035);color:var(--text,#fff);font:600 13px/1 Inter,system-ui,sans-serif;cursor:pointer;transition:.2s ease}.marquee-view-all-btn:hover{border-color:rgba(0,245,160,.4);background:rgba(0,245,160,.07);transform:translateY(-1px)}.marquee-view-all-icon{font-size:18px;line-height:12px;color:var(--accent,#00f5a0)}
-/* Expanded mode: show one logical copy of each CMS item. The marquee
-   renderer keeps a second visual copy for seamless scrolling, which must
-   never appear as additional data in View All mode. */
-.marquee-expanded .services-marquee,.marquee-expanded .clients-marquee{overflow:visible}.marquee-expanded .services-track,.marquee-expanded .clients-track{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;padding:10px 0;animation:none!important;transform:none!important}.marquee-expanded .services-track .service-card{width:auto;min-width:0;flex:initial}.marquee-expanded .clients-track{gap:18px}.marquee-expanded .clients-track .client-card{width:auto;min-width:0;flex:initial}.marquee-expanded .view-all-duplicate{display:none!important}
-@media(max-width:680px){.marquee-view-all-wrap{margin-top:2px;margin-bottom:4px}.marquee-expanded .services-track,.marquee-expanded .clients-track{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.marquee-expanded .services-track .service-card,.marquee-expanded .clients-track .client-card{width:100%;min-width:0}.marquee-expanded .clients-track .client-card{min-height:175px}.marquee-view-all-btn{font-size:12px;padding:9px 14px}}
-@media(max-width:430px){.marquee-expanded .services-track,.marquee-expanded .clients-track{grid-template-columns:1fr}}
+
+/* View All is a real catalogue view, not the marquee stretched to viewport width. */
+.marquee-expanded .services-marquee,.marquee-expanded .clients-marquee{overflow:visible;width:100%;}
+.marquee-expanded .services-track,.marquee-expanded .clients-track{
+  width:min(100%,1160px)!important;
+  max-width:1160px!important;
+  margin:0 auto!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  align-items:stretch!important;
+  gap:24px!important;
+  padding:10px 24px 18px!important;
+  animation:none!important;
+  transform:none!important;
+}
+.marquee-expanded .services-track .service-card,.marquee-expanded .clients-track .client-card{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  flex:initial!important;
+  margin:0!important;
+}
+.marquee-expanded .services-track .professional-service-card{padding:20px!important;}
+.marquee-expanded .services-track .professional-service-card .service-image{
+  width:100%!important;
+  aspect-ratio:16/9!important;
+  max-height:220px!important;
+  overflow:hidden!important;
+  border-radius:14px!important;
+  margin-bottom:16px!important;
+}
+.marquee-expanded .services-track .professional-service-card .service-image img{
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  object-fit:cover!important;
+}
+.marquee-expanded .services-track .service-title{font-size:1.05rem;line-height:1.3;margin-bottom:8px;}
+.marquee-expanded .services-track .service-desc{font-size:.84rem;line-height:1.55;}
+.marquee-expanded .view-all-duplicate{display:none!important}
+
+@media(max-width:900px){
+  .marquee-expanded .services-track,.marquee-expanded .clients-track{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;padding-inline:16px!important;}
+}
+@media(max-width:680px){
+  .marquee-view-all-wrap{margin-top:2px;margin-bottom:4px}
+  .marquee-expanded .services-track,.marquee-expanded .clients-track{grid-template-columns:1fr!important;gap:14px!important;padding:8px 16px 16px!important;}
+  .marquee-expanded .services-track .service-card,.marquee-expanded .clients-track .client-card{width:100%!important;min-width:0!important;}
+  .marquee-expanded .services-track .professional-service-card{padding:16px!important;}
+  .marquee-expanded .services-track .professional-service-card .service-image{max-height:none!important;aspect-ratio:16/9!important;}
+  .marquee-expanded .clients-track .client-card{min-height:175px;}
+  .marquee-view-all-btn{font-size:12px;padding:9px 14px}
+}
