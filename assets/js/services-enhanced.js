@@ -1,351 +1,342 @@
 /*
- * FRONTEND SERVICES ENHANCEMENT
- * Sequential single-copy services carousel.
- * Auto-advances one card at a time and loops back to the first card.
+ * NOBIN MORSALIN — SERVICES CAROUSEL
+ * One-card-at-a-time autoplay with a seamless loop.
+ * Desktop + mobile responsive. View All disables autoplay while expanded.
  */
 (function () {
   'use strict';
 
-  const SERVICE_PLACEHOLDER = '/assets/images/service-placeholder.svg';
-  const STEP_DELAY = 3200;
-  const TRANSITION_MS = 650;
+  const STEP_DELAY = 3000;
+  const TRANSITION_MS = 700;
+  const STYLE_ID = 'services-sequential-style-v3';
 
-  let autoTimer = null;
-  let currentIndex = 0;
-  let isPaused = false;
+  let timer = null;
   let resizeTimer = null;
-  let sectionObserver = null;
-  let containerObserver = null;
+  let index = 0;
+  let itemCount = 0;
+  let running = false;
   let renderLock = false;
+  let sectionObserver = null;
 
-  function hideLegacyServiceIcon() {
-    if (document.getElementById('services-image-only-style')) return;
+  function esc(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function safeUrl(value) {
+    const v = String(value || '').trim();
+    return /^(https?:\/\/|\/|#|mailto:)/i.test(v) ? v : '';
+  }
+
+  function elements() {
+    const section = document.getElementById('services');
+    const track = document.getElementById('servicesGrid');
+    const viewport = section?.querySelector('.services-marquee');
+    return { section, track, viewport };
+  }
+
+  function installStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+
     const style = document.createElement('style');
-    style.id = 'services-image-only-style';
+    style.id = STYLE_ID;
     style.textContent = `
-      #services .service-icon { display:none !important; }
       #services .services-marquee {
-        width:100%;
-        max-width:100%;
-        overflow:hidden;
-        position:relative;
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
       }
+
       #services .services-track-sequential {
-        display:flex !important;
-        flex-wrap:nowrap !important;
-        align-items:stretch;
-        gap:24px;
-        width:max-content !important;
-        max-width:none !important;
-        margin:0 !important;
-        padding:0 24px 8px;
-        animation:none !important;
-        will-change:transform;
-        transform:translate3d(0,0,0);
-        transition:transform ${TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1);
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        gap: 24px !important;
+        width: max-content !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 24px 10px !important;
+        animation: none !important;
+        will-change: transform;
+        transform: translate3d(0,0,0);
+        transition: transform ${TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1);
       }
+
       #services .services-track-sequential .professional-service-card {
-        flex:0 0 clamp(280px, 28vw, 320px) !important;
-        width:clamp(280px, 28vw, 320px) !important;
-        min-width:clamp(280px, 28vw, 320px) !important;
-        max-width:320px !important;
+        flex: 0 0 clamp(280px, 28vw, 320px) !important;
+        width: clamp(280px, 28vw, 320px) !important;
+        min-width: clamp(280px, 28vw, 320px) !important;
+        max-width: 320px !important;
       }
-      #services .professional-service-card .service-image,
-      #services .professional-service-card .service-image img {
-        display:block;
-      }
+
       #services .professional-service-card .service-image {
-        width:100%;
-        aspect-ratio:16/10;
-        overflow:hidden;
-        border-radius:18px;
-        margin-bottom:18px;
-        background:rgba(255,255,255,.04);
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        border-radius: 18px;
+        margin-bottom: 18px;
+        background: rgba(255,255,255,.04);
       }
+
       #services .professional-service-card .service-image img {
-        width:100%;
-        height:100%;
-        object-fit:cover;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
-      #services .professional-service-card { cursor:pointer; }
+
+      #services .service-icon { display: none !important; }
+
       #services.marquee-expanded .services-track-sequential {
-        transform:none !important;
-        transition:none !important;
+        transform: none !important;
+        transition: none !important;
       }
-      @media(max-width:680px){
+
+      @media (max-width: 680px) {
         #services .services-track-sequential {
-          gap:14px;
-          padding:0 16px 8px;
+          gap: 14px !important;
+          padding: 0 16px 10px !important;
         }
+
         #services .services-track-sequential .professional-service-card {
-          flex-basis:calc(100vw - 48px) !important;
-          width:calc(100vw - 48px) !important;
-          min-width:calc(100vw - 48px) !important;
-          max-width:none !important;
+          flex-basis: calc(100vw - 48px) !important;
+          width: calc(100vw - 48px) !important;
+          min-width: calc(100vw - 48px) !important;
+          max-width: none !important;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #services .services-track-sequential {
+          transition: none !important;
         }
       }
     `;
     document.head.appendChild(style);
   }
 
-  function esc(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/\"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  function safeUrl(value) {
-    const v = String(value || '').trim();
-    return /^(https?:\/\/|\/|#|mailto:)/i.test(v) ? v : '#';
-  }
-
-  function getElements() {
-    const section = document.querySelector('#services');
-    const container = document.querySelector('#servicesGrid');
-    const marquee = section?.querySelector('.services-marquee');
-    return { section, container, marquee };
-  }
-
   function clearTimer() {
-    if (autoTimer) {
-      window.clearTimeout(autoTimer);
-      autoTimer = null;
+    if (timer !== null) {
+      window.clearTimeout(timer);
+      timer = null;
     }
   }
 
-  function getGap(track) {
-    const styles = window.getComputedStyle(track);
-    const gap = parseFloat(styles.columnGap || styles.gap || '0');
-    return Number.isFinite(gap) ? gap : 0;
+  function isExpanded() {
+    return elements().section?.classList.contains('marquee-expanded') === true;
   }
 
   function getStep(track) {
-    const card = track.querySelector('.professional-service-card');
+    const card = track?.querySelector('.professional-service-card');
     if (!card) return 0;
-    return card.getBoundingClientRect().width + getGap(track);
+    const gap = parseFloat(window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || '0') || 0;
+    return card.getBoundingClientRect().width + gap;
   }
 
-  function getVisibleCount(marquee, track, step) {
-    if (!step) return 1;
-    const available = marquee.getBoundingClientRect().width;
-    return Math.max(1, Math.floor((available + getGap(track)) / step));
-  }
+  function moveTo(nextIndex, animated) {
+    const { track } = elements();
+    if (!track) return;
 
-  function getMaxIndex(marquee, track) {
-    const cards = track.querySelectorAll('.professional-service-card');
-    if (!cards.length) return 0;
     const step = getStep(track);
-    if (!step) return Math.max(0, cards.length - 1);
-    return Math.max(0, cards.length - getVisibleCount(marquee, track, step));
-  }
-
-  function applyPosition(animated) {
-    const { section, marquee, container } = getElements();
-    if (!section || !marquee || !container) return;
-
-    const cards = container.querySelectorAll('.professional-service-card');
-    if (!cards.length) return;
-
-    if (section.classList.contains('marquee-expanded')) {
-      container.style.transition = 'none';
-      container.style.transform = 'none';
-      return;
-    }
-
-    const maxIndex = getMaxIndex(marquee, container);
-    currentIndex = Math.min(currentIndex, maxIndex);
-    const step = getStep(container);
     if (!step) return;
 
-    container.style.transition = animated
+    track.style.transition = animated
       ? `transform ${TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1)`
       : 'none';
-    container.style.transform = `translate3d(${-currentIndex * step}px,0,0)`;
+    track.style.transform = `translate3d(${-nextIndex * step}px, 0, 0)`;
   }
 
-  function scheduleNext() {
+  function schedule() {
     clearTimer();
-    if (isPaused) return;
+    if (!running || isExpanded() || itemCount <= 1) return;
 
-    const { section, marquee, container } = getElements();
-    if (!section || !marquee || !container) return;
-    if (section.classList.contains('marquee-expanded')) return;
+    timer = window.setTimeout(() => {
+      if (!running || isExpanded() || itemCount <= 1) return;
 
-    const cards = container.querySelectorAll('.professional-service-card');
-    if (cards.length <= 1) return;
+      index += 1;
 
-    autoTimer = window.setTimeout(() => {
-      if (isPaused || section.classList.contains('marquee-expanded')) return;
-
-      const maxIndex = getMaxIndex(marquee, container);
-
-      if (currentIndex < maxIndex) {
-        currentIndex += 1;
-        applyPosition(true);
-        scheduleNext();
+      /*
+       * We render two copies. The first item of the second copy is exactly
+       * one full catalogue length away, so after the last real item is shown
+       * we can jump back to zero invisibly and continue forever.
+       */
+      if (index > itemCount) {
+        index = 0;
+        moveTo(0, false);
+        window.requestAnimationFrame(() => schedule());
         return;
       }
 
-      /* Show the final visible position, then reset invisibly and continue. */
-      currentIndex = 0;
-      window.setTimeout(() => {
-        if (isPaused || section.classList.contains('marquee-expanded')) return;
-        applyPosition(false);
-        scheduleNext();
-      }, TRANSITION_MS + 120);
+      moveTo(index, true);
+
+      if (index === itemCount) {
+        window.setTimeout(() => {
+          if (!running || isExpanded()) return;
+          index = 0;
+          moveTo(0, false);
+          schedule();
+        }, TRANSITION_MS + 60);
+      } else {
+        schedule();
+      }
     }, STEP_DELAY);
   }
 
-  function pause() {
-    isPaused = true;
+  function start() {
+    running = true;
+    schedule();
+  }
+
+  function stop() {
+    running = false;
     clearTimer();
   }
 
-  function resume() {
-    isPaused = false;
-    scheduleNext();
+  function applyCurrentPosition() {
+    if (isExpanded()) {
+      moveTo(0, false);
+      return;
+    }
+    index = Math.max(0, Math.min(index, itemCount));
+    moveTo(index, false);
   }
 
-  function bindInteractions(section, marquee, container) {
-    if (!marquee || marquee.dataset.sequentialBound === 'true') return;
-    marquee.dataset.sequentialBound = 'true';
+  function buildCard(service) {
+    const image = safeUrl(service.image) || '/assets/images/service-placeholder.svg';
+    const name = service.name || service.title || 'Service';
+    const short = service.desc || service.shortDescription || service.description || '';
 
-    marquee.addEventListener('mouseenter', pause, { passive: true });
-    marquee.addEventListener('mouseleave', resume, { passive: true });
-    marquee.addEventListener('pointerdown', pause, { passive: true });
-    marquee.addEventListener('pointerup', resume, { passive: true });
-    marquee.addEventListener('touchstart', pause, { passive: true });
-    marquee.addEventListener('touchend', resume, { passive: true });
-
-    if (sectionObserver) sectionObserver.disconnect();
-    sectionObserver = new MutationObserver(() => {
-      if (renderLock) return;
-      if (!section.classList.contains('marquee-expanded')) {
-        currentIndex = 0;
-        container.style.transition = 'none';
-        container.style.transform = 'translate3d(0,0,0)';
-        scheduleNext();
-      } else {
-        clearTimer();
-        container.style.transition = 'none';
-        container.style.transform = 'none';
-      }
-    });
-    sectionObserver.observe(section, { attributes: true, attributeFilter: ['class'] });
-
-    /* main.js can refresh the catalogue after this script initializes.
-       If it recreates the old duplicated cards, immediately restore the
-       single-copy sequential renderer. */
-    if (containerObserver) containerObserver.disconnect();
-    containerObserver = new MutationObserver(() => {
-      if (renderLock) return;
-      window.clearTimeout(containerObserver._timer);
-      containerObserver._timer = window.setTimeout(() => {
-        const cards = container.querySelectorAll('.professional-service-card');
-        if (!cards.length) return;
-        const services = window.PortfolioData?.get?.('services');
-        const visibleCount = Array.isArray(services)
-          ? services.filter(Boolean).filter(s => s.visible !== false && s.active !== false).length
-          : 0;
-
-        if (visibleCount > 0 && cards.length !== visibleCount) {
-          renderProfessionalServices();
-        } else if (!section.classList.contains('marquee-expanded') && !isPaused) {
-          scheduleNext();
-        }
-      }, 40);
-    });
-    containerObserver.observe(container, { childList: true });
+    return `
+      <article class="service-card professional-service-card">
+        <div class="service-image">
+          <img
+            src="${esc(image)}"
+            alt="${esc(name)}"
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+            onerror="this.onerror=null;this.src='/assets/images/service-placeholder.svg'"
+          />
+        </div>
+        <h3 class="service-title">${esc(name)}</h3>
+        <p class="service-desc">${esc(short)}</p>
+      </article>
+    `;
   }
 
-  function setupSequentialMarquee() {
-    const { section, container, marquee } = getElements();
-    if (!section || !container || !marquee) return;
+  function getVisibleServices() {
+    if (!window.PortfolioData || typeof window.PortfolioData.get !== 'function') return [];
 
-    hideLegacyServiceIcon();
-    container.classList.add('services-track-sequential');
-    container.dataset.marqueeReady = 'true';
-    currentIndex = 0;
-    container.style.transition = 'none';
-    container.style.transform = 'translate3d(0,0,0)';
-    bindInteractions(section, marquee, container);
-    scheduleNext();
+    const services = window.PortfolioData.get('services');
+    if (!Array.isArray(services)) return [];
+
+    return services
+      .filter(Boolean)
+      .filter(service => service.visible !== false && service.active !== false)
+      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
   }
 
-  function renderProfessionalServices() {
+  function setupTrack() {
+    const { track } = elements();
+    if (!track) return;
+
+    track.classList.add('services-track-sequential');
+    track.dataset.marqueeReady = 'true';
+  }
+
+  function render() {
     if (renderLock) return;
     renderLock = true;
-    hideLegacyServiceIcon();
 
-    const { container } = getElements();
-    if (!container || !window.PortfolioData) {
-      renderLock = false;
-      return;
-    }
-
+    installStyles();
     clearTimer();
-    currentIndex = 0;
 
-    const services = PortfolioData.get('services');
-    if (!Array.isArray(services)) {
+    const { section, track, viewport } = elements();
+    if (!section || !track || !viewport) {
       renderLock = false;
       return;
     }
 
-    const visible = services
-      .filter(Boolean)
-      .filter((s) => s.visible !== false && s.active !== false)
-      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+    const services = getVisibleServices();
+    itemCount = services.length;
+    index = 0;
 
-    if (!visible.length) {
-      container.innerHTML = '';
-      container.dataset.marqueeReady = 'false';
+    if (!itemCount) {
+      track.innerHTML = '';
+      stop();
       renderLock = false;
       return;
     }
 
-    const card = (s) => {
-      const image = safeUrl(s.image) !== '#' ? safeUrl(s.image) : SERVICE_PLACEHOLDER;
-      const name = s.name || 'Service';
-      const shortDescription = s.desc || s.shortDescription || s.description || '';
+    const firstCopy = services.map(buildCard).join('');
+    const secondCopy = services.map(buildCard).join('');
 
-      return `
-        <article class="service-card professional-service-card">
-          <div class="service-image">
-            <img src="${esc(image)}" alt="${esc(name)}" loading="lazy" decoding="async" draggable="false" onerror="this.onerror=null;this.src='${SERVICE_PLACEHOLDER}'">
-          </div>
-          <h3 class="service-title">${esc(name)}</h3>
-          <p class="service-desc">${esc(shortDescription)}</p>
-        </article>`;
-    };
+    /* Two copies = seamless reset after every service has been shown. */
+    track.innerHTML = firstCopy + secondCopy;
+    setupTrack();
+    moveTo(0, false);
 
-    /* Exactly one visual copy. The controller loops back to index 0. */
-    container.innerHTML = visible.map(card).join('');
-    container.dataset.marqueeReady = 'true';
     renderLock = false;
-    setupSequentialMarquee();
+
+    if (!section.classList.contains('marquee-expanded')) start();
   }
 
-  hideLegacyServiceIcon();
-  document.addEventListener('DOMContentLoaded', renderProfessionalServices, { once: true });
-  window.refreshProfessionalServices = renderProfessionalServices;
+  function observeExpandedState() {
+    const { section, track } = elements();
+    if (!section || !track || sectionObserver) return;
 
-  const refreshPortfolio = window.refreshPortfolio;
-  if (typeof refreshPortfolio === 'function') {
-    window.refreshPortfolio = function () {
-      refreshPortfolio();
-      renderProfessionalServices();
+    sectionObserver = new MutationObserver(() => {
+      if (section.classList.contains('marquee-expanded')) {
+        stop();
+        index = 0;
+        moveTo(0, false);
+      } else {
+        index = 0;
+        moveTo(0, false);
+        start();
+      }
+    });
+
+    sectionObserver.observe(section, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+
+  function init() {
+    installStyles();
+    render();
+    observeExpandedState();
+
+    window.addEventListener('resize', () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        applyCurrentPosition();
+      }, 120);
+    }, { passive: true });
+  }
+
+  window.refreshProfessionalServices = render;
+
+  /* Keep Admin/data refreshes compatible with the sequential renderer. */
+  const originalRefresh = window.refreshPortfolio;
+  if (typeof originalRefresh === 'function' && !originalRefresh.__servicesWrapped) {
+    const wrappedRefresh = function () {
+      originalRefresh();
+      window.setTimeout(render, 0);
     };
+    wrappedRefresh.__servicesWrapped = true;
+    window.refreshPortfolio = wrappedRefresh;
   }
 
-  window.addEventListener('resize', () => {
-    window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(() => {
-      const { section, container } = getElements();
-      if (!section || !container) return;
-      applyPosition(false);
-      if (!section.classList.contains('marquee-expanded') && !isPaused) scheduleNext();
-    }, 120);
-  }, { passive: true });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
 })();
