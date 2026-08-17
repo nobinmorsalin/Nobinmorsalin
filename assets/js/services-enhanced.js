@@ -1,8 +1,7 @@
 /*
  * FRONTEND SERVICES ENHANCEMENT
- * Keeps the existing service preview and Admin-driven data intact.
- * Services are shown once and move through the catalogue one card at a time.
- * Full details remain available through the existing portfolio details modal.
+ * Sequential single-copy services carousel.
+ * Auto-advances one card at a time and loops back to the first card.
  */
 (function () {
   'use strict';
@@ -15,8 +14,9 @@
   let currentIndex = 0;
   let isPaused = false;
   let resizeTimer = null;
-  let observedSection = null;
   let sectionObserver = null;
+  let containerObserver = null;
+  let renderLock = false;
 
   function hideLegacyServiceIcon() {
     if (document.getElementById('services-image-only-style')) return;
@@ -24,6 +24,32 @@
     style.id = 'services-image-only-style';
     style.textContent = `
       #services .service-icon { display:none !important; }
+      #services .services-marquee {
+        width:100%;
+        max-width:100%;
+        overflow:hidden;
+        position:relative;
+      }
+      #services .services-track-sequential {
+        display:flex !important;
+        flex-wrap:nowrap !important;
+        align-items:stretch;
+        gap:24px;
+        width:max-content !important;
+        max-width:none !important;
+        margin:0 !important;
+        padding:0 24px 8px;
+        animation:none !important;
+        will-change:transform;
+        transform:translate3d(0,0,0);
+        transition:transform ${TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1);
+      }
+      #services .services-track-sequential .professional-service-card {
+        flex:0 0 clamp(280px, 28vw, 320px) !important;
+        width:clamp(280px, 28vw, 320px) !important;
+        min-width:clamp(280px, 28vw, 320px) !important;
+        max-width:320px !important;
+      }
       #services .professional-service-card .service-image,
       #services .professional-service-card .service-image img {
         display:block;
@@ -41,22 +67,22 @@
         height:100%;
         object-fit:cover;
       }
-      #services .professional-service-card {
-        cursor:pointer;
-      }
-      /* Sequential catalogue: never render a duplicated visual data set. */
-      #services .services-track-sequential {
-        animation:none !important;
-        transform:translate3d(0,0,0);
-        transition:transform ${TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1);
-        will-change:transform;
-      }
-      #services .services-track-sequential.is-paused {
-        transition-duration:${TRANSITION_MS}ms;
-      }
+      #services .professional-service-card { cursor:pointer; }
       #services.marquee-expanded .services-track-sequential {
         transform:none !important;
         transition:none !important;
+      }
+      @media(max-width:680px){
+        #services .services-track-sequential {
+          gap:14px;
+          padding:0 16px 8px;
+        }
+        #services .services-track-sequential .professional-service-card {
+          flex-basis:calc(100vw - 48px) !important;
+          width:calc(100vw - 48px) !important;
+          min-width:calc(100vw - 48px) !important;
+          max-width:none !important;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -121,15 +147,14 @@
     const cards = container.querySelectorAll('.professional-service-card');
     if (!cards.length) return;
 
-    const maxIndex = getMaxIndex(marquee, container);
-    currentIndex = Math.min(currentIndex, maxIndex);
-
     if (section.classList.contains('marquee-expanded')) {
       container.style.transition = 'none';
       container.style.transform = 'none';
       return;
     }
 
+    const maxIndex = getMaxIndex(marquee, container);
+    currentIndex = Math.min(currentIndex, maxIndex);
     const step = getStep(container);
     if (!step) return;
 
@@ -151,6 +176,8 @@
     if (cards.length <= 1) return;
 
     autoTimer = window.setTimeout(() => {
+      if (isPaused || section.classList.contains('marquee-expanded')) return;
+
       const maxIndex = getMaxIndex(marquee, container);
 
       if (currentIndex < maxIndex) {
@@ -160,12 +187,10 @@
         return;
       }
 
-      /*
-       * The final card has been shown. Restart from the first card without
-       * creating a second visual copy, so duplicate cards never appear.
-       */
+      /* Show the final visible position, then reset invisibly and continue. */
       currentIndex = 0;
       window.setTimeout(() => {
+        if (isPaused || section.classList.contains('marquee-expanded')) return;
         applyPosition(false);
         scheduleNext();
       }, TRANSITION_MS + 120);
@@ -188,21 +213,19 @@
 
     marquee.addEventListener('mouseenter', pause, { passive: true });
     marquee.addEventListener('mouseleave', resume, { passive: true });
-    marquee.addEventListener('focusin', pause);
-    marquee.addEventListener('focusout', resume);
-
-    /* Pause while a user swipes/touches the service rail. */
+    marquee.addEventListener('pointerdown', pause, { passive: true });
+    marquee.addEventListener('pointerup', resume, { passive: true });
     marquee.addEventListener('touchstart', pause, { passive: true });
     marquee.addEventListener('touchend', resume, { passive: true });
 
     if (sectionObserver) sectionObserver.disconnect();
-    observedSection = section;
     sectionObserver = new MutationObserver(() => {
+      if (renderLock) return;
       if (!section.classList.contains('marquee-expanded')) {
-        container.style.transition = 'none';
         currentIndex = 0;
+        container.style.transition = 'none';
         container.style.transform = 'translate3d(0,0,0)';
-        if (!isPaused) scheduleNext();
+        scheduleNext();
       } else {
         clearTimer();
         container.style.transition = 'none';
@@ -210,6 +233,30 @@
       }
     });
     sectionObserver.observe(section, { attributes: true, attributeFilter: ['class'] });
+
+    /* main.js can refresh the catalogue after this script initializes.
+       If it recreates the old duplicated cards, immediately restore the
+       single-copy sequential renderer. */
+    if (containerObserver) containerObserver.disconnect();
+    containerObserver = new MutationObserver(() => {
+      if (renderLock) return;
+      window.clearTimeout(containerObserver._timer);
+      containerObserver._timer = window.setTimeout(() => {
+        const cards = container.querySelectorAll('.professional-service-card');
+        if (!cards.length) return;
+        const services = window.PortfolioData?.get?.('services');
+        const visibleCount = Array.isArray(services)
+          ? services.filter(Boolean).filter(s => s.visible !== false && s.active !== false).length
+          : 0;
+
+        if (visibleCount > 0 && cards.length !== visibleCount) {
+          renderProfessionalServices();
+        } else if (!section.classList.contains('marquee-expanded') && !isPaused) {
+          scheduleNext();
+        }
+      }, 40);
+    });
+    containerObserver.observe(container, { childList: true });
   }
 
   function setupSequentialMarquee() {
@@ -219,26 +266,32 @@
     hideLegacyServiceIcon();
     container.classList.add('services-track-sequential');
     container.dataset.marqueeReady = 'true';
-
     currentIndex = 0;
     container.style.transition = 'none';
     container.style.transform = 'translate3d(0,0,0)';
-
     bindInteractions(section, marquee, container);
     scheduleNext();
   }
 
   function renderProfessionalServices() {
+    if (renderLock) return;
+    renderLock = true;
     hideLegacyServiceIcon();
 
     const { container } = getElements();
-    if (!container || !window.PortfolioData) return;
+    if (!container || !window.PortfolioData) {
+      renderLock = false;
+      return;
+    }
 
     clearTimer();
     currentIndex = 0;
 
     const services = PortfolioData.get('services');
-    if (!Array.isArray(services)) return;
+    if (!Array.isArray(services)) {
+      renderLock = false;
+      return;
+    }
 
     const visible = services
       .filter(Boolean)
@@ -248,6 +301,7 @@
     if (!visible.length) {
       container.innerHTML = '';
       container.dataset.marqueeReady = 'false';
+      renderLock = false;
       return;
     }
 
@@ -259,24 +313,17 @@
       return `
         <article class="service-card professional-service-card">
           <div class="service-image">
-            <img
-              src="${esc(image)}"
-              alt="${esc(name)}"
-              loading="lazy"
-              decoding="async"
-              draggable="false"
-              onerror="this.onerror=null;this.src='${SERVICE_PLACEHOLDER}'"
-            >
+            <img src="${esc(image)}" alt="${esc(name)}" loading="lazy" decoding="async" draggable="false" onerror="this.onerror=null;this.src='${SERVICE_PLACEHOLDER}'">
           </div>
           <h3 class="service-title">${esc(name)}</h3>
           <p class="service-desc">${esc(shortDescription)}</p>
         </article>`;
     };
 
-    /* Render each Admin service exactly once. */
+    /* Exactly one visual copy. The controller loops back to index 0. */
     container.innerHTML = visible.map(card).join('');
     container.dataset.marqueeReady = 'true';
-
+    renderLock = false;
     setupSequentialMarquee();
   }
 
@@ -298,9 +345,7 @@
       const { section, container } = getElements();
       if (!section || !container) return;
       applyPosition(false);
-      if (!section.classList.contains('marquee-expanded') && !isPaused) {
-        scheduleNext();
-      }
+      if (!section.classList.contains('marquee-expanded') && !isPaused) scheduleNext();
     }, 120);
   }, { passive: true });
 })();
