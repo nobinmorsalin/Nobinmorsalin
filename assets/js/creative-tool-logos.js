@@ -9,11 +9,14 @@
     'Adobe Illustrator': ['https://api.iconify.design/logos:adobe-illustrator.svg'],
     'Figma': ['https://api.iconify.design/logos:figma.svg'],
     'Canva': [
-      'https://cdn.jsdelivr.net/gh/callback-io/allogo@main/public/logos/canva/icon.svg',
-      'https://api.iconify.design/logos:canva.svg'
+      'https://cdn.simpleicons.org/canva',
+      'https://api.iconify.design/logos:canva.svg',
+      'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/canva.svg'
     ],
     'CapCut': [
-      'https://svgicons.com/img/2983/capcut.svg',
+      'https://cdn.simpleicons.org/capcut/ffffff',
+      'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/capcut.svg',
+      'https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/capcut/default.svg',
       'https://api.iconify.design/logos:capcut.svg'
     ]
   };
@@ -23,11 +26,9 @@
     ['Laravel', 'https://api.iconify.design/logos:laravel.svg', 'SYSTEM MODE', 'Scalable web applications'],
     ['API', 'https://api.iconify.design/mdi:api.svg?color=%2300ffc4', 'INTEGRATION MODE', 'APIs & automation that connect'],
     ['Figma', 'https://api.iconify.design/logos:figma.svg', 'DESIGN MODE', 'Premium UI/UX experiences'],
-    ['Canva', 'https://api.iconify.design/logos:canva.svg', 'CREATIVE MODE', 'Posters, brands & visual content'],
-    ['CapCut', 'https://api.iconify.design/logos:capcut.svg', 'MOTION MODE', 'Video editing & motion design']
+    ['Canva', 'https://cdn.simpleicons.org/canva', 'CREATIVE MODE', 'Posters, brands & visual content'],
+    ['CapCut', 'https://cdn.simpleicons.org/capcut/ffffff', 'MOTION MODE', 'Video editing & motion design']
   ];
-
-  const LIGHT_LOGO_NAMES = new Set(['CapCut']);
 
   function enhance(root = document) {
     root.querySelectorAll('.fse-creative-tool img[alt$=" logo"]').forEach(img => {
@@ -40,8 +41,6 @@
       img.dataset.brandLogoFallback = fallback;
       img.dataset.brandLogoIndex = '0';
 
-      if (LIGHT_LOGO_NAMES.has(name)) img.style.filter = 'brightness(0) invert(1)';
-
       const tryNext = () => {
         const nextIndex = Number(img.dataset.brandLogoIndex || '0') + 1;
         if (nextIndex < urls.length) {
@@ -51,7 +50,6 @@
         }
         const previous = img.dataset.brandLogoFallback;
         if (previous && img.src !== previous) img.src = previous;
-        img.style.filter = '';
       };
 
       img.addEventListener('error', tryNext);
