@@ -1,7 +1,6 @@
 /* =========================================================
    CLIENTS ADMIN — CRUD + Vercel Blob image upload
-   Keeps the existing PortfolioData structure simple:
-   { id, name, service, logo, website, visible }
+   Keeps the existing PortfolioData structure simple and backwards compatible.
 ========================================================= */
 (function () {
   'use strict';
@@ -32,6 +31,12 @@
     return result.url;
   }
 
+  function getClientServices(client) {
+    if (Array.isArray(client?.services)) return client.services.filter(Boolean).map(String);
+    const raw = client?.service || '';
+    return String(raw).split(',').map((item) => item.trim()).filter(Boolean);
+  }
+
   function renderClientsAdmin() {
     const grid = document.getElementById('clientsAdmin');
     if (!grid || !window.PortfolioData) return;
@@ -45,7 +50,8 @@
 
     grid.innerHTML = clients.map((client) => {
       const name = client?.name || 'Client';
-      const service = client?.service || client?.services || 'Digital Solution';
+      const services = getClientServices(client);
+      const serviceSummary = services.slice(0, 3).join(' · ') || 'Digital Solution';
       const logo = client?.logo || client?.image || '';
       const website = client?.website || client?.url || client?.link || '';
       const visible = client?.visible !== false && client?.active !== false;
@@ -59,7 +65,7 @@
             }
           </div>
           <div class="admin-card-title">${esc(name)}</div>
-          <div class="admin-card-desc">${esc(service)}</div>
+          <div class="admin-card-desc">${esc(serviceSummary)}</div>
           <div class="admin-card-desc" style="opacity:.7">
             ${website ? esc(website) : 'No website link'}
             · ${visible ? 'Visible' : 'Hidden'}
@@ -84,6 +90,7 @@
   function openClientModal(clientId) {
     const clients = PortfolioData.get('clients');
     const client = clients.find((item) => String(item?.id) === String(clientId)) || null;
+    const services = getClientServices(client);
 
     openModal(
       client ? 'Edit Client' : 'Add Client',
@@ -94,8 +101,14 @@
         </div>
 
         <div class="form-group">
-          <label>Service</label>
-          <input class="admin-input" id="cService" value="${esc(client?.service || '')}" placeholder="Web Development, API Integration" />
+          <label>Service List</label>
+          <textarea class="admin-input" id="cServices" rows="4" placeholder="Website Development, Logo Design, SEO, Facebook Ads">${esc(services.join(', '))}</textarea>
+          <div class="settings-info" style="margin-top:6px">Separate multiple services with commas. Example: Website Development, Logo Design, SEO</div>
+        </div>
+
+        <div class="form-group">
+          <label>Details / Description</label>
+          <textarea class="admin-input" id="cDescription" rows="6" placeholder="Describe what you delivered for this client. This will appear only when a visitor opens the client details.">${esc(client?.description || client?.details || '')}</textarea>
         </div>
 
         <div class="form-group">
@@ -123,10 +136,12 @@
       `,
       async () => {
         const name = document.getElementById('cName')?.value.trim();
-        const service = document.getElementById('cService')?.value.trim();
+        const servicesValue = document.getElementById('cServices')?.value.trim() || '';
+        const description = document.getElementById('cDescription')?.value.trim() || '';
         const website = document.getElementById('cWebsite')?.value.trim();
         const logo = document.getElementById('cLogo')?.value.trim();
         const visible = Boolean(document.getElementById('cVisible')?.checked);
+        const serviceList = servicesValue.split(',').map((item) => item.trim()).filter(Boolean);
 
         if (!name) {
           alert('Client name is required.');
@@ -150,7 +165,9 @@
         const record = {
           id: client?.id || `c${Date.now()}`,
           name,
-          service,
+          service: serviceList.join(', '),
+          services: serviceList,
+          description,
           logo: latestLogo,
           website,
           visible,
