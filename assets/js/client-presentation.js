@@ -1,13 +1,12 @@
 /* Premium client presentation layer.
  * Keeps Admin/PortfolioData as source of truth.
  * Client cards open the in-site detail modal instead of navigating away.
- * Adds a dark premium logo stage and removes near-white logo backgrounds
- * client-side when the uploaded image permits canvas processing.
+ * Adds a dark premium logo stage and a connected-chain marquee treatment.
  */
 (() => {
   'use strict';
 
-  const STYLE_ID = 'premium-client-presentation-v3';
+  const STYLE_ID = 'premium-client-presentation-v4';
   const processedLogoCache = new Map();
 
   function installStyles() {
@@ -16,13 +15,34 @@
     style.id = STYLE_ID;
     style.textContent = `
       #clients .clients-marquee {
+        position: relative;
         overflow: hidden;
-        padding: 18px 0 34px;
+        padding: 28px 0 42px;
+      }
+
+      #clients .clients-marquee::before,
+      #clients .clients-marquee::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 12vw;
+        z-index: 8;
+        pointer-events: none;
+      }
+      #clients .clients-marquee::before {
+        left: 0;
+        background: linear-gradient(90deg, var(--page-bg, #05090c), transparent);
+      }
+      #clients .clients-marquee::after {
+        right: 0;
+        background: linear-gradient(270deg, var(--page-bg, #05090c), transparent);
       }
 
       #clients .clients-track {
-        align-items: stretch;
+        align-items: center;
         will-change: transform;
+        transform: translate3d(0,0,0);
       }
 
       #clients .client-card.premium-client-card {
@@ -33,7 +53,7 @@
         min-height: 285px;
         flex-direction: column;
         justify-content: space-between;
-        overflow: hidden;
+        overflow: visible;
         padding: 0;
         border: 1px solid rgba(255,255,255,.085);
         border-radius: 24px;
@@ -49,9 +69,102 @@
         cursor: pointer;
         outline: none;
         isolation: isolate;
+        transform: translate3d(0,0,0);
         transition: transform .38s cubic-bezier(.2,.7,.2,1),
                     border-color .38s ease,
                     box-shadow .38s ease;
+        animation: clientChainFloat 5.4s ease-in-out infinite;
+        animation-delay: calc(var(--chain-index, 0) * 0.22s);
+      }
+
+      #clients .client-card.premium-client-card:nth-child(2n) {
+        animation-duration: 6.2s;
+      }
+
+      @keyframes clientChainFloat {
+        0%,100% { transform: translate3d(0,0,0); }
+        50% { transform: translate3d(0,-3px,0); }
+      }
+
+      #clients .client-card.premium-client-card:hover,
+      #clients .client-card.premium-client-card:focus-visible {
+        transform: translate3d(0,-7px,0) !important;
+        border-color: rgba(0,255,196,.30);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.075),
+          0 28px 68px rgba(0,0,0,.34),
+          0 0 34px rgba(0,255,196,.075);
+        animation-play-state: paused;
+      }
+
+      /* Animated chain connector between logical cards. */
+      #clients .client-chain-link {
+        position: absolute;
+        z-index: -1;
+        top: 50%;
+        right: -34px;
+        width: 68px;
+        height: 2px;
+        transform: translateY(-50%);
+        border-radius: 999px;
+        background: linear-gradient(90deg,
+          rgba(0,255,196,.08),
+          rgba(0,255,196,.55),
+          rgba(120,70,255,.26),
+          rgba(0,255,196,.08));
+        background-size: 220% 100%;
+        animation: clientChainPulse 2.8s linear infinite;
+        opacity: .72;
+        pointer-events: none;
+      }
+
+      #clients .client-chain-link::before,
+      #clients .client-chain-link::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #08f6c4;
+        box-shadow: 0 0 10px rgba(0,255,196,.65);
+        transform: translateY(-50%);
+      }
+      #clients .client-chain-link::before { left: -1px; }
+      #clients .client-chain-link::after { right: -1px; }
+
+      @keyframes clientChainPulse {
+        from { background-position: 0% 50%; }
+        to { background-position: 200% 50%; }
+      }
+
+      /* Small index marker makes the chain feel like a sequence rather than a row of cards. */
+      #clients .client-sequence {
+        position: absolute;
+        z-index: 4;
+        top: 14px;
+        right: 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: rgba(187,210,215,.48);
+        font: 600 8px/1 var(--font-mono, 'JetBrains Mono', monospace);
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        pointer-events: none;
+      }
+      #clients .client-sequence i {
+        display: block;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #09f5c4;
+        box-shadow: 0 0 10px rgba(0,255,196,.55);
+        animation: clientNodePulse 1.8s ease-in-out infinite;
+      }
+      @keyframes clientNodePulse {
+        0%,100% { transform: scale(.7); opacity: .45; }
+        50% { transform: scale(1.15); opacity: 1; }
       }
 
       #clients .client-card.premium-client-card::before {
@@ -74,16 +187,6 @@
         background: linear-gradient(90deg, transparent, rgba(0,255,196,.55), transparent);
         opacity: .35;
         pointer-events: none;
-      }
-
-      #clients .client-card.premium-client-card:hover,
-      #clients .client-card.premium-client-card:focus-visible {
-        transform: translateY(-7px);
-        border-color: rgba(0,255,196,.30);
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,.075),
-          0 28px 68px rgba(0,0,0,.34),
-          0 0 34px rgba(0,255,196,.075);
       }
 
       #clients .client-card.premium-client-card .client-visual {
@@ -212,7 +315,7 @@
       }
 
       @media (max-width: 680px) {
-        #clients .clients-marquee { padding: 12px 0 28px; }
+        #clients .clients-marquee { padding: 12px 0 30px; }
         #clients .client-card.premium-client-card {
           flex-basis: min(82vw, 320px);
           width: min(82vw, 320px);
@@ -238,18 +341,25 @@
         }
         #clients .client-card.premium-client-card .client-service {
           max-width: 100%;
-          padding-right: 0;
           margin-top: 7px;
         }
         #clients .client-card.premium-client-card .client-info::after {
           display: none;
         }
+        #clients .client-chain-link {
+          right: -24px;
+          width: 48px;
+          height: 2px;
+        }
       }
 
       @media (prefers-reduced-motion: reduce) {
         #clients .client-card.premium-client-card,
-        #clients .client-card.premium-client-card .client-logo {
-          transition: none;
+        #clients .client-card.premium-client-card .client-logo,
+        #clients .client-chain-link,
+        #clients .client-sequence i {
+          animation: none !important;
+          transition: none !important;
         }
       }
     `;
@@ -262,13 +372,11 @@
       const source = image.currentSrc || image.src;
       if (!source || source.startsWith('data:')) return resolve(null);
       if (processedLogoCache.has(source)) return resolve(processedLogoCache.get(source));
-
       const work = () => {
         try {
           const width = image.naturalWidth;
           const height = image.naturalHeight;
           if (!width || !height || width > 1800 || height > 1800) return resolve(null);
-
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
@@ -278,37 +386,20 @@
           const pixels = ctx.getImageData(0, 0, width, height);
           const data = pixels.data;
           let changed = 0;
-
           for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            const a = data[i + 3];
-            if (a === 0) continue;
-
-            // Preserve real logo colors; only remove pixels that are essentially white.
-            const min = Math.min(r, g, b);
-            const max = Math.max(r, g, b);
-            if (r > 238 && g > 238 && b > 238) {
-              data[i + 3] = 0;
-              changed++;
-            } else if (min > 220 && max - min < 18) {
-              data[i + 3] = Math.max(0, Math.round(a * .12));
-              changed++;
-            }
+            const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+            if (!a) continue;
+            const min = Math.min(r, g, b), max = Math.max(r, g, b);
+            if (r > 238 && g > 238 && b > 238) { data[i + 3] = 0; changed++; }
+            else if (min > 220 && max - min < 18) { data[i + 3] = Math.max(0, Math.round(a * .12)); changed++; }
           }
-
           if (!changed) return resolve(null);
           ctx.putImageData(pixels, 0, 0);
           const result = canvas.toDataURL('image/png');
           processedLogoCache.set(source, result);
           resolve(result);
-        } catch (_) {
-          // Cross-origin images without CORS support stay untouched.
-          resolve(null);
-        }
+        } catch (_) { resolve(null); }
       };
-
       if (image.complete && image.naturalWidth) work();
       else image.addEventListener('load', work, { once: true });
     });
@@ -330,16 +421,11 @@
   function normalizeCards() {
     const root = document.getElementById('clientsGrid');
     if (!root) return;
-
-    root.querySelectorAll('.client-card').forEach((card) => {
+    root.querySelectorAll('.client-card').forEach((card, index) => {
       if (card.tagName === 'A') {
         const replacement = document.createElement('article');
-        for (const attr of Array.from(card.attributes)) {
-          replacement.setAttribute(attr.name, attr.value);
-        }
-        replacement.removeAttribute('href');
-        replacement.removeAttribute('target');
-        replacement.removeAttribute('rel');
+        for (const attr of Array.from(card.attributes)) replacement.setAttribute(attr.name, attr.value);
+        replacement.removeAttribute('href'); replacement.removeAttribute('target'); replacement.removeAttribute('rel');
         replacement.innerHTML = card.innerHTML;
         replacement.classList.add('premium-client-card');
         replacement.setAttribute('tabindex', '0');
@@ -347,6 +433,7 @@
         const name = replacement.querySelector('.client-name')?.textContent?.trim() || 'client';
         replacement.setAttribute('aria-label', `View ${name} details`);
         card.replaceWith(replacement);
+        card = replacement;
       } else {
         card.classList.add('premium-client-card');
         if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '0');
@@ -354,8 +441,25 @@
         const name = card.querySelector('.client-name')?.textContent?.trim() || 'client';
         card.setAttribute('aria-label', `View ${name} details`);
       }
-    });
 
+      card.style.setProperty('--chain-index', String(index % 12));
+
+      // Keep one connector inside every card; the last visible card can also connect into the next duplicate.
+      if (!card.querySelector('.client-chain-link')) {
+        const link = document.createElement('span');
+        link.className = 'client-chain-link';
+        link.setAttribute('aria-hidden', 'true');
+        card.appendChild(link);
+      }
+
+      if (!card.querySelector('.client-sequence')) {
+        const seq = document.createElement('span');
+        seq.className = 'client-sequence';
+        seq.setAttribute('aria-hidden', 'true');
+        seq.innerHTML = `<i></i> ${String((index % 99) + 1).padStart(2, '0')}`;
+        card.appendChild(seq);
+      }
+    });
     enhanceLogos();
   }
 
@@ -366,9 +470,7 @@
 
   window.addEventListener('portfolio:data-ready', () => setTimeout(bind, 0));
   window.addEventListener('load', () => setTimeout(bind, 80));
-  setTimeout(bind, 150);
-  setTimeout(bind, 500);
-  setTimeout(bind, 1200);
+  setTimeout(bind, 150); setTimeout(bind, 500); setTimeout(bind, 1200);
 
   let observerTimer = null;
   const observer = new MutationObserver(() => {
@@ -381,9 +483,6 @@
     if (root) observer.observe(root, { childList: true, subtree: true });
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startObserver, { once: true });
-  } else {
-    startObserver();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startObserver, { once: true });
+  else startObserver();
 })();
